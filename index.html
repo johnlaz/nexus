@@ -396,12 +396,27 @@ main {
 .card-preview-overlay {
   position: absolute; inset: 0;
   background: linear-gradient(to bottom, transparent 60%, var(--surface) 100%);
+  pointer-events: none;
 }
 .card-preview-placeholder {
   position: absolute; inset: 0;
   display: flex; align-items: center; justify-content: center;
   flex-direction: column; gap: 8px;
 }
+
+/* When userIcon is set — show it large and centered in the preview */
+.card-preview-user-icon {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--surface2);
+}
+.card-preview-user-icon img {
+  width: 80px; height: 80px;
+  object-fit: contain;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+}
+
 .card-preview-initial {
   font-family: 'Playfair Display', serif;
   font-size: 3rem;
@@ -432,6 +447,7 @@ main {
   font-family: 'DM Mono', monospace;
   font-size: 9px;
   letter-spacing: 2px;
+  z-index: 2;
 }
 
 /* Card body */
@@ -492,9 +508,131 @@ main {
   cursor: pointer;
   transition: all 0.2s;
 }
-.card-launch-btn:hover {
-  background: var(--gold-glow);
-  border-color: var(--gold);
+.card-launch-btn:hover { background: var(--gold-glow); border-color: var(--gold); }
+
+/* ── MOBILE NAV BAR ── */
+.mobile-nav {
+  display: none;
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: 60px;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  z-index: 200;
+  align-items: center;
+  justify-content: space-around;
+  padding: 0 8px;
+}
+.mobile-nav-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  background: none; border: none; color: var(--dim); cursor: pointer;
+  font-family: 'DM Mono', monospace; font-size: 8px; letter-spacing: 1px;
+  text-transform: uppercase; padding: 8px 12px; border-radius: 8px;
+  transition: all 0.2s; flex: 1;
+}
+.mobile-nav-btn.active { color: var(--gold); }
+.mobile-nav-btn svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 1.5; }
+
+/* ── MOBILE SIDEBAR DRAWER ── */
+.sidebar-overlay {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 149;
+  backdrop-filter: blur(4px);
+}
+.sidebar-overlay.open { display: block; }
+
+/* ── RESPONSIVE BREAKPOINTS ── */
+@media (max-width: 768px) {
+  :root { --sidebar-w: 100vw; --header-h: 56px; }
+
+  .shell { flex-direction: column; height: 100dvh; }
+
+  /* Sidebar becomes a slide-in drawer */
+  aside {
+    position: fixed;
+    top: 0; left: 0;
+    width: 85vw; max-width: 320px;
+    height: 100dvh;
+    transform: translateX(-110%);
+    transition: transform 0.3s cubic-bezier(0.23,1,0.32,1);
+    z-index: 150;
+    box-shadow: 8px 0 40px rgba(0,0,0,0.6);
+  }
+  aside.drawer-open { transform: translateX(0); }
+
+  /* Main fills full screen */
+  main { height: 100dvh; overflow: hidden; }
+
+  /* Dashboard header compact */
+  .dash-header {
+    padding: 0 16px;
+    flex-wrap: wrap;
+    height: auto;
+    min-height: var(--header-h);
+    gap: 8px;
+  }
+  .dash-header-right { gap: 10px; flex-wrap: wrap; }
+  .header-divider { display: none; }
+  .header-stat-val { font-size: 13px; }
+
+  /* Scan all button compact */
+  .scan-all-btn { padding: 6px 10px; font-size: 9px; }
+
+  /* Dashboard body */
+  .dash-body { padding: 16px 12px 80px; }  /* bottom pad for mobile nav */
+
+  /* Cards — single column on small phones, 2 col on larger */
+  .cards-grid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 12px;
+  }
+  .card-preview { height: 120px; }
+  .card-preview-user-icon img { width: 56px; height: 56px; border-radius: 12px; }
+  .card-preview-initial { font-size: 2.2rem; }
+  .card-body { padding: 12px 14px 14px; }
+  .card-name { font-size: 1rem; }
+  .card-desc { display: none; } /* hide desc on small cards */
+  .card-url-display { display: none; }
+
+  /* Section header */
+  .section-header { margin-bottom: 16px; }
+
+  /* Iframe view */
+  .iframe-header {
+    padding: 0 12px;
+    gap: 10px;
+    height: var(--header-h);
+    flex-wrap: nowrap;
+  }
+  .iframe-key-area { display: none !important; } /* key accessible via copy btn in header */
+  .iframe-app-url { display: none; }
+
+  /* Mobile back button — bigger tap target */
+  .iframe-back { padding: 10px 14px; font-size: 11px; }
+
+  /* Modal full screen on mobile */
+  .modal-panel {
+    width: 100vw; max-width: 100vw;
+    height: 90dvh; max-height: 90dvh;
+    border-radius: 16px 16px 0 0;
+    position: fixed; bottom: 0; left: 0;
+  }
+  .modal-backdrop { align-items: flex-end; }
+
+  /* Show mobile nav */
+  .mobile-nav { display: flex; }
+
+  /* Hide desktop settings btn since it's in mobile nav */
+  .sidebar-footer { display: none; }
+}
+
+@media (max-width: 400px) {
+  .cards-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .card-preview { height: 100px; }
+  .card-preview-user-icon img { width: 44px; height: 44px; }
+  .card-name { font-size: 0.85rem; }
 }
 
 /* ── IFRAME VIEW ── */
@@ -869,10 +1007,13 @@ main {
 </head>
 <body>
 
+<!-- Sidebar overlay for mobile -->
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="closeMobileDrawer()"></div>
+
 <div class="shell">
 
   <!-- ── SIDEBAR ── -->
-  <aside>
+  <aside id="sidebar">
     <div class="wordmark" onclick="showDashboard()">
       <div class="wordmark-label">App Portfolio</div>
       <div class="wordmark-title">NEX<em>US</em></div>
@@ -1095,16 +1236,27 @@ function renderGrid() {
     card.className = 'app-card';
     card.id = `card-${app.id}`;
 
-    const previewInner = ogImage
-      ? `<img class="og-img" src="${ogImage}" style="width:100%;height:100%;object-fit:cover;display:block;position:absolute;inset:0;" onerror="this.remove()">
-         <div class="card-preview-placeholder">
-           <div class="card-preview-initial" style="${themeColor ? `color:${themeColor}` : ''}">${initial}</div>
-           <div class="card-preview-url">${shortUrl}</div>
-         </div>`
-      : `<div class="card-preview-placeholder">
-           <div class="card-preview-initial" style="${themeColor ? `color:${themeColor}` : ''}">${initial}</div>
-           <div class="card-preview-url">${shortUrl}</div>
-         </div>`;
+    // Preview area: userIcon (large centered) > og:image > letter placeholder
+    let previewInner;
+    if (app.userIcon) {
+      previewInner = `
+        <div class="card-preview-user-icon">
+          <img src="${app.userIcon}" alt="${displayName}" onerror="this.parentElement.style.display='none'">
+        </div>`;
+    } else if (ogImage) {
+      previewInner = `
+        <img class="og-img" src="${ogImage}" style="width:100%;height:100%;object-fit:cover;display:block;position:absolute;inset:0;" onerror="this.remove()">
+        <div class="card-preview-placeholder">
+          <div class="card-preview-initial" style="${themeColor ? `color:${themeColor}` : ''}">${initial}</div>
+          <div class="card-preview-url">${shortUrl}</div>
+        </div>`;
+    } else {
+      previewInner = `
+        <div class="card-preview-placeholder">
+          <div class="card-preview-initial" style="${themeColor ? `color:${themeColor}` : ''}">${initial}</div>
+          <div class="card-preview-url">${shortUrl}</div>
+        </div>`;
+    }
 
     const iconHtml = iconSrc
       ? `<img class="fav-img" src="${iconSrc}" width="14" height="14" style="border-radius:3px;object-fit:contain;flex-shrink:0;" onerror="this.remove()">`
@@ -1154,7 +1306,18 @@ function renderGrid() {
   });
 }
 
-// ── GROQ KEY ──
+// ── MOBILE DRAWER ──
+function openMobileDrawer() {
+  document.getElementById('sidebar').classList.add('drawer-open');
+  document.getElementById('sidebar-overlay').classList.add('open');
+}
+function closeMobileDrawer() {
+  document.getElementById('sidebar').classList.remove('drawer-open');
+  document.getElementById('sidebar-overlay').classList.remove('open');
+}
+// Close drawer when an app is launched on mobile
+const _origLaunch = launch;
+// (patched below in launch itself)
 function getGroqKey() { return localStorage.getItem('nexus-groq-key') || ''; }
 function saveGroqKey(val) {
   localStorage.setItem('nexus-groq-key', val.trim());
@@ -1192,19 +1355,18 @@ async function groqEnrich(app, rawHtml) {
     .trim()
     .slice(0, 3000); // Groq context window — 3k chars is plenty
 
-  const prompt = `You are analyzing a web app hosted at: ${app.url}
+  const prompt = `You are analyzing a web application. URL: ${app.url}
 
-Here is the page content (truncated):
+Page content (truncated to 3000 chars):
 """
 ${stripped}
 """
 
-Based ONLY on this content, respond with a valid JSON object and nothing else:
+Return ONLY a valid JSON object, no markdown, no explanation:
 {
-  "name": "Short app name (2-4 words max, no domain name)",
-  "tag": "One category word or short phrase (e.g. Inventory, Music, Analytics, CRM)",
-  "desc": "One sentence description of what this app does, written for a portfolio showcase. Max 120 characters.",
-  "themeKeyword": "One word describing the app's main color or vibe (e.g. dark, gold, blue, minimal)"
+  "name": "The app's actual name in 1-4 words. Do NOT use the domain name. Look for a brand name, product name, or H1 heading.",
+  "tag": "One specific category word — e.g. Inventory, Music, Firearms, AV Rental, CRM, Scheduling, Analytics. Do NOT use 'Application' or 'App'.",
+  "desc": "One punchy sentence (max 100 chars) describing what this app does for the user. Start with a verb."
 }`;
 
   try {
@@ -1354,7 +1516,26 @@ function refreshCard(app) {
   // userIcon always wins over scraped favicon
   const iconSrc = app.userIcon || favicon || '';
 
-  if (ogImage && !previewDiv.querySelector('img.og-img')) {
+  // userIcon always wins over scraped favicon — also update preview area
+  if (app.userIcon) {
+    // Replace preview contents with large icon display
+    let userIconZone = previewDiv.querySelector('.card-preview-user-icon');
+    if (!userIconZone) {
+      previewDiv.innerHTML = `
+        <div class="card-preview-user-icon">
+          <img src="${app.userIcon}" alt="${app.name}" onerror="this.parentElement.style.display='none'">
+        </div>
+        <div class="card-preview-overlay"></div>
+        <div class="card-status-badge">
+          <span class="status-pip ${document.getElementById('cardpip-'+app.id)?.className?.split(' ')[1] || 'pip-checking'}" id="cardpip-${app.id}"></span>
+          <span id="cardstat-${app.id}" style="font-size:9px;letter-spacing:2px;" class="${document.getElementById('cardstat-'+app.id)?.className || 's-checking'}">
+            ${document.getElementById('cardstat-'+app.id)?.textContent || 'CHECKING'}
+          </span>
+        </div>`;
+    } else {
+      userIconZone.querySelector('img').src = app.userIcon;
+    }
+  } else if (ogImage && !previewDiv.querySelector('img.og-img')) {
     const img = document.createElement('img');
     img.className = 'og-img';
     img.src = ogImage;
@@ -1543,6 +1724,7 @@ function launch(app) {
   document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
   const navEl = document.getElementById(`nav-${app.id}`);
   if (navEl) navEl.classList.add('active');
+  closeMobileDrawer();
 }
 
 function showDashboard() {
@@ -1551,6 +1733,7 @@ function showDashboard() {
   document.getElementById('iframe-view').style.display = 'none';
   document.getElementById('app-frame').src = '';
   document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  closeMobileDrawer();
 }
 
 function copyKey() {
@@ -1856,5 +2039,25 @@ if ('serviceWorker' in navigator) {
   });
 }
 </script>
+<!-- Mobile bottom nav -->
+<nav class="mobile-nav">
+  <button class="mobile-nav-btn" onclick="openMobileDrawer()" id="mob-menu-btn">
+    <svg viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    Apps
+  </button>
+  <button class="mobile-nav-btn" onclick="showDashboard()" id="mob-home-btn">
+    <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    Home
+  </button>
+  <button class="mobile-nav-btn" onclick="scanAll()" id="mob-scan-btn">
+    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    Scan
+  </button>
+  <button class="mobile-nav-btn" onclick="openModal()" id="mob-settings-btn">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    Settings
+  </button>
+</nav>
+
 </body>
 </html>
