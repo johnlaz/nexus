@@ -807,8 +807,47 @@ main {
 }
 .file-label:hover { border-color: var(--gold-dim); color: var(--gold); }
 
-/* Toast */
-.toast {
+/* Scan All button */
+.scan-all-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: 1px solid rgba(201,168,76,0.3);
+  color: var(--gold);
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.scan-all-btn:hover { background: var(--gold-glow); border-color: var(--gold); }
+.scan-all-btn.scanning { border-color: var(--amber); color: var(--amber); cursor: not-allowed; }
+.scan-all-btn .spin { display: inline-block; animation: spin 1s linear infinite; }
+@keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+
+/* Scan progress bar */
+.scan-progress-bar {
+  position: absolute;
+  bottom: 0; left: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--gold), var(--amber));
+  transition: width 0.4s ease;
+  border-radius: 0 2px 2px 0;
+  display: none;
+}
+
+/* Toast upgrade — show scan count */
+.toast-sub {
+  font-size: 9px;
+  color: var(--dim);
+  margin-top: 3px;
+  letter-spacing: 1px;
+}
   position: fixed;
   bottom: 32px; right: 32px;
   background: var(--surface2);
@@ -861,12 +900,16 @@ main {
 
     <!-- DASHBOARD VIEW -->
     <div id="dashboard-view" style="display:flex; flex-direction:column; height:100%;">
-      <div class="dash-header">
+      <div class="dash-header" style="position:relative;">
         <div class="dash-header-left">
-          <span class="dash-eyebrow">Suite Overview</span>
+          <span class="dash-eyebrow">Portfolio Overview</span>
           <span class="dash-title">All Applications</span>
         </div>
         <div class="dash-header-right">
+          <button class="scan-all-btn" id="scan-all-btn" onclick="scanAll()">
+            <span id="scan-icon">⟳</span> Scan All
+          </button>
+          <div class="header-divider"></div>
           <div class="header-stat">
             <div class="header-stat-val"><span id="live-count">—</span> / <span id="total-count">—</span></div>
             <div class="header-stat-label">Systems Live</div>
@@ -877,6 +920,7 @@ main {
             <div class="header-stat-label">Last Check</div>
           </div>
         </div>
+        <div class="scan-progress-bar" id="scan-progress-bar"></div>
       </div>
 
       <div class="dash-body">
@@ -1088,63 +1132,72 @@ function renderGrid() {
   });
 }
 
-// ── METADATA SCRAPER ──
-async function scrapeMetadata(app) {
-  const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(app.url)}`;
-  try {
-    const res = await fetch(proxyUrl, { signal: AbortSignal.timeout(10000) });
-    const data = await res.json();
-    const html = data.contents;
-    if (!html) return;
+// ── METADATA SCRAPER — multi-proxy with fallback ──
+const PROXIES = [
+  url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+  url => `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`,
+  url => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
+];
 
+async function fetchWithProxies(targetUrl) {
+  for (const proxy of PROXIES) {
+    const proxyUrl = proxy(targetUrl);
+    try {
+      const res = await fetch(proxyUrl, { signal: AbortSignal.timeout(8000) });
+      if (!res.ok) continue;
+      const text = await res.text();
+      // allorigins wraps in {contents:...}
+      try {
+        const json = JSON.parse(text);
+        if (json.contents) return json.contents;
+      } catch {}
+      // direct proxy returns raw HTML
+      if (text.trim().startsWith('<') || text.includes('<!DOCTYPE')) return text;
+    } catch (err) {
+      console.warn(`[Nexus] Proxy failed (${proxyUrl}):`, err.message);
+    }
+  }
+  throw new Error('All proxies exhausted');
+}
+
+async function scrapeMetadata(app) {
+  try {
+    const html = await fetchWithProxies(app.url);
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, 'text/html');
 
-    // Extract metadata
     const get = (sel) => doc.querySelector(sel)?.content?.trim() || '';
     const getAttr = (sel, attr) => doc.querySelector(sel)?.getAttribute(attr)?.trim() || '';
 
-    const ogTitle   = get('meta[property="og:title"]');
-    const metaTitle = doc.querySelector('title')?.textContent?.trim() || '';
-    const ogDesc    = get('meta[property="og:description"]') || get('meta[name="description"]');
-    const ogImage   = get('meta[property="og:image"]');
+    const ogTitle    = get('meta[property="og:title"]');
+    const metaTitle  = doc.querySelector('title')?.textContent?.trim() || '';
+    const ogDesc     = get('meta[property="og:description"]') || get('meta[name="description"]');
+    const ogImage    = get('meta[property="og:image"]');
     const themeColor = get('meta[name="theme-color"]');
 
-    // Resolve favicon
     let favicon = getAttr('link[rel="icon"]', 'href')
       || getAttr('link[rel="shortcut icon"]', 'href')
       || getAttr('link[rel="apple-touch-icon"]', 'href')
       || '/favicon.ico';
 
-    // Make favicon absolute
-    if (favicon && !favicon.startsWith('http')) {
+    // Resolve relative URLs
+    const makeAbsolute = (href) => {
+      if (!href || href.startsWith('http')) return href;
       const base = new URL(app.url);
-      favicon = favicon.startsWith('/')
-        ? `${base.origin}${favicon}`
-        : `${base.origin}/${favicon}`;
-    }
+      return href.startsWith('/') ? `${base.origin}${href}` : `${base.origin}/${href}`;
+    };
 
-    // Make og:image absolute
-    let resolvedOgImage = ogImage;
-    if (ogImage && !ogImage.startsWith('http')) {
-      const base = new URL(app.url);
-      resolvedOgImage = ogImage.startsWith('/')
-        ? `${base.origin}${ogImage}`
-        : `${base.origin}/${ogImage}`;
-    }
+    favicon              = makeAbsolute(favicon);
+    const resolvedOgImage = makeAbsolute(ogImage);
 
-    // Derive a clean app name from title (strip common suffixes)
-    const rawTitle = ogTitle || metaTitle;
+    const rawTitle  = ogTitle || metaTitle;
     const cleanTitle = rawTitle
-      .replace(/\s*[|\-–—]\s*.*/,'')  // strip "— Site Name" suffixes
-      .replace(/\s*:.*$/,'')           // strip ": subtitle"
+      .replace(/\s*[|\-–—]\s*.*/,'')
+      .replace(/\s*:.*$/,'')
       .trim() || app.name;
 
-    // Build tag from meta keywords or existing
     const keywords = get('meta[name="keywords"]');
-    const autoTag = keywords
-      ? keywords.split(',')[0].trim()
-      : (app.tag || 'Application');
+    const autoTag  = keywords ? keywords.split(',')[0].trim() : (app.tag || 'Application');
 
     app.meta = {
       title: cleanTitle,
@@ -1156,67 +1209,107 @@ async function scrapeMetadata(app) {
       scrapedAt: Date.now()
     };
 
-    // If name/desc were still defaults, update them
     if (!app.userSetName) app.name = cleanTitle;
     if (!app.userSetDesc) app.desc = ogDesc || '';
     if (!app.userSetTag)  app.tag  = autoTag;
 
     save();
-
-    // Re-render just this card
-    const cardEl = document.getElementById(`card-${app.id}`);
-    if (cardEl) {
-      // Remove scraping indicator
-      const si = document.getElementById(`scraping-${app.id}`);
-      if (si) si.remove();
-
-      // Update card contents
-      const shortUrl = app.url.replace(/^https?:\/\//, '').replace(/\/$/, '');
-      const previewDiv = cardEl.querySelector('.card-preview');
-      const placeholder = previewDiv.querySelector('.card-preview-placeholder');
-
-      if (resolvedOgImage) {
-        const img = document.createElement('img');
-        img.src = resolvedOgImage;
-        img.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
-        img.onerror = () => img.remove();
-        previewDiv.insertBefore(img, placeholder);
-      }
-
-      if (themeColor) {
-        previewDiv.style.borderTop = `2px solid ${themeColor}`;
-        const init = placeholder?.querySelector('.card-preview-initial');
-        if (init) init.style.color = themeColor;
-      }
-
-      cardEl.querySelector('.card-name').textContent = cleanTitle;
-      if (ogDesc) cardEl.querySelector('.card-desc').textContent = ogDesc;
-
-      const tagEl = cardEl.querySelector('.card-tag span');
-      if (tagEl) tagEl.textContent = autoTag;
-
-      // Insert favicon
-      if (favicon) {
-        const tagContainer = cardEl.querySelector('.card-tag');
-        const img = document.createElement('img');
-        img.src = favicon;
-        img.width = 14; img.height = 14;
-        img.style.cssText = 'border-radius:3px;object-fit:contain;';
-        img.onerror = () => img.remove();
-        tagContainer.insertBefore(img, tagContainer.firstChild);
-      }
-
-      // Also update sidebar nav item
-      const navName = document.querySelector(`#nav-${app.id} .nav-item-name`);
-      if (navName) navName.textContent = cleanTitle;
-      const navTag = document.querySelector(`#nav-${app.id} .nav-item-tag`);
-      if (navTag) navTag.textContent = autoTag;
-    }
+    refreshCard(app);
+    return true;
   } catch (err) {
     console.warn(`[Nexus] Metadata scrape failed for ${app.url}:`, err);
     const si = document.getElementById(`scraping-${app.id}`);
     if (si) { si.textContent = 'Scan failed'; si.style.color = 'var(--dim2)'; }
+    return false;
   }
+}
+
+// Pull card DOM update into its own fn so scanAll can call it too
+function refreshCard(app) {
+  const cardEl = document.getElementById(`card-${app.id}`);
+  if (!cardEl) return;
+
+  const si = document.getElementById(`scraping-${app.id}`);
+  if (si) si.remove();
+
+  const previewDiv  = cardEl.querySelector('.card-preview');
+  const placeholder = previewDiv.querySelector('.card-preview-placeholder');
+  const { ogImage: resolvedOgImage, themeColor, favicon, title: cleanTitle, desc: ogDesc, tag: autoTag } = app.meta;
+
+  if (resolvedOgImage && !previewDiv.querySelector('img.og-img')) {
+    const img = document.createElement('img');
+    img.className = 'og-img';
+    img.src = resolvedOgImage;
+    img.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
+    img.onerror = () => img.remove();
+    previewDiv.insertBefore(img, placeholder);
+  }
+
+  if (themeColor) {
+    previewDiv.style.borderTop = `2px solid ${themeColor}`;
+    const init = placeholder?.querySelector('.card-preview-initial');
+    if (init) init.style.color = themeColor;
+  }
+
+  cardEl.querySelector('.card-name').textContent = cleanTitle;
+  if (ogDesc) cardEl.querySelector('.card-desc').textContent = ogDesc;
+
+  const tagEl = cardEl.querySelector('.card-tag span');
+  if (tagEl) tagEl.textContent = autoTag;
+
+  if (favicon && !cardEl.querySelector('.fav-img')) {
+    const tagContainer = cardEl.querySelector('.card-tag');
+    const img = document.createElement('img');
+    img.className = 'fav-img';
+    img.src = favicon;
+    img.width = 14; img.height = 14;
+    img.style.cssText = 'border-radius:3px;object-fit:contain;';
+    img.onerror = () => img.remove();
+    tagContainer.insertBefore(img, tagContainer.firstChild);
+  }
+
+  const navName = document.querySelector(`#nav-${app.id} .nav-item-name`);
+  if (navName) navName.textContent = cleanTitle;
+  const navTag = document.querySelector(`#nav-${app.id} .nav-item-tag`);
+  if (navTag) navTag.textContent = autoTag;
+}
+
+// ── SCAN ALL ──
+async function scanAll() {
+  const btn  = document.getElementById('scan-all-btn');
+  const icon = document.getElementById('scan-icon');
+  const bar  = document.getElementById('scan-progress-bar');
+  if (btn.classList.contains('scanning')) return;
+
+  const targets = apps.filter(a => a.url && a.url.startsWith('http'));
+  if (!targets.length) { toast('No apps to scan'); return; }
+
+  btn.classList.add('scanning');
+  icon.className = 'spin';
+  icon.textContent = '⟳';
+  bar.style.display = 'block';
+  bar.style.width = '0%';
+
+  let done = 0, succeeded = 0;
+
+  toast(`Scanning ${targets.length} apps…`);
+
+  for (const app of targets) {
+    app.meta = null; // force fresh scrape
+    const ok = await scrapeMetadata(app);
+    if (ok) succeeded++;
+    done++;
+    bar.style.width = `${Math.round((done / targets.length) * 100)}%`;
+  }
+
+  // Done
+  btn.classList.remove('scanning');
+  icon.className = '';
+  icon.textContent = '⟳';
+  setTimeout(() => { bar.style.width = '0%'; bar.style.display = 'none'; }, 800);
+
+  toast(`Scan complete — ${succeeded}/${targets.length} apps updated`);
+  renderConfigRows(); // refresh config panel if open
 }
 
 function updateStats() {
