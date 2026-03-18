@@ -50,6 +50,7 @@ nexus/
 
 | Version | Notes |
 |---------|-------|
+| v1.3 | Groq AI enrichment — reads full page content to generate name, tag, description when meta tags are sparse. AI Settings tab. ✦ AI badge on enriched cards. Scan All button with live progress. |
 | v1.2 | Multi-proxy scraper (corsproxy → allorigins → codetabs fallback chain), Scan All button with progress bar |
 | v1.1 | Auto metadata scraping from URL — title, description, favicon, og:image, theme color |
 | v1.0 | Initial release — Dark luxury editorial UI, card previews, SW caching |

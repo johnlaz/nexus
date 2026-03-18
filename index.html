@@ -966,6 +966,7 @@ main {
     <div class="modal-tabs">
       <button class="modal-tab active" onclick="switchTab(event,'tab-apps')">Apps & Keys</button>
       <button class="modal-tab" onclick="switchTab(event,'tab-brand')">Branding</button>
+      <button class="modal-tab" onclick="switchTab(event,'tab-groq')">AI Settings</button>
       <button class="modal-tab" onclick="switchTab(event,'tab-io')">Export / Import</button>
     </div>
 
@@ -986,6 +987,23 @@ main {
           </label>
           <br><br>
           <button class="io-btn io-btn-ghost" style="width:auto; padding:10px 24px;" onclick="resetLogo()">Reset to Text</button>
+        </div>
+      </div>
+
+      <!-- GROQ TAB -->
+      <div id="tab-groq" style="display:none; padding: 8px 0;">
+        <div style="margin-bottom:16px;">
+          <div style="font-family:'DM Mono',monospace; font-size:9px; letter-spacing:3px; color:var(--gold); text-transform:uppercase; margin-bottom:8px;">Groq API Key</div>
+          <input class="config-input full" id="groq-key-input" type="password" placeholder="gsk_..." style="width:100%; margin-bottom:8px;"
+            oninput="saveGroqKey(this.value)">
+          <div style="font-size:11px; color:var(--dim); line-height:1.6;">
+            When set, Groq AI reads the full page content of each app and writes a rich name, tag, and description — even when meta tags are missing or sparse.<br><br>
+            Get a free key at <span style="color:var(--gold);">console.groq.com</span>
+          </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:10px; margin-top:16px; padding:12px; background:var(--surface2); border-radius:6px; border:1px solid var(--border);">
+          <span id="groq-status-pip" class="status-pip pip-offline"></span>
+          <span id="groq-status-text" style="font-family:'DM Mono',monospace; font-size:10px; color:var(--dim); letter-spacing:1px;">NO KEY SET</span>
         </div>
       </div>
 
@@ -1132,7 +1150,90 @@ function renderGrid() {
   });
 }
 
-// ── METADATA SCRAPER — multi-proxy with fallback ──
+// ── GROQ KEY ──
+function getGroqKey() { return localStorage.getItem('nexus-groq-key') || ''; }
+function saveGroqKey(val) {
+  localStorage.setItem('nexus-groq-key', val.trim());
+  updateGroqStatus();
+}
+function updateGroqStatus() {
+  const key = getGroqKey();
+  const pip  = document.getElementById('groq-status-pip');
+  const txt  = document.getElementById('groq-status-text');
+  const inp  = document.getElementById('groq-key-input');
+  if (inp && !inp.value && key) inp.value = key;
+  if (!pip) return;
+  if (key) {
+    pip.className = 'status-pip pip-live';
+    txt.textContent = 'KEY SET — AI ENRICHMENT ACTIVE';
+    txt.style.color = 'var(--green)';
+  } else {
+    pip.className = 'status-pip pip-offline';
+    txt.textContent = 'NO KEY SET — FALLBACK TO META TAGS ONLY';
+    txt.style.color = 'var(--dim)';
+  }
+}
+
+// ── GROQ ENRICHMENT ──
+async function groqEnrich(app, rawHtml) {
+  const key = getGroqKey();
+  if (!key) return null;
+
+  // Strip HTML down to readable text — remove scripts, styles, tags
+  const stripped = rawHtml
+    .replace(/<script[\s\S]*?<\/script>/gi, '')
+    .replace(/<style[\s\S]*?<\/style>/gi, '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s{2,}/g, ' ')
+    .trim()
+    .slice(0, 3000); // Groq context window — 3k chars is plenty
+
+  const prompt = `You are analyzing a web app hosted at: ${app.url}
+
+Here is the page content (truncated):
+"""
+${stripped}
+"""
+
+Based ONLY on this content, respond with a valid JSON object and nothing else:
+{
+  "name": "Short app name (2-4 words max, no domain name)",
+  "tag": "One category word or short phrase (e.g. Inventory, Music, Analytics, CRM)",
+  "desc": "One sentence description of what this app does, written for a portfolio showcase. Max 120 characters.",
+  "themeKeyword": "One word describing the app's main color or vibe (e.g. dark, gold, blue, minimal)"
+}`;
+
+  try {
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${key}`
+      },
+      body: JSON.stringify({
+        model: 'llama3-8b-8192',
+        messages: [{ role: 'user', content: prompt }],
+        max_tokens: 200,
+        temperature: 0.3
+      }),
+      signal: AbortSignal.timeout(10000)
+    });
+
+    if (!res.ok) { console.warn('[Nexus Groq] API error:', res.status); return null; }
+
+    const data = await res.json();
+    const raw  = data.choices?.[0]?.message?.content?.trim() || '';
+
+    // Parse JSON — strip any markdown fences
+    const clean = raw.replace(/```json|```/g, '').trim();
+    return JSON.parse(clean);
+  } catch (err) {
+    console.warn('[Nexus Groq] Enrichment failed:', err.message);
+    return null;
+  }
+}
+
+// ── METADATA SCRAPER — multi-proxy + Groq enrichment ──
 const PROXIES = [
   url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
   url => `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`,
@@ -1146,12 +1247,7 @@ async function fetchWithProxies(targetUrl) {
       const res = await fetch(proxyUrl, { signal: AbortSignal.timeout(8000) });
       if (!res.ok) continue;
       const text = await res.text();
-      // allorigins wraps in {contents:...}
-      try {
-        const json = JSON.parse(text);
-        if (json.contents) return json.contents;
-      } catch {}
-      // direct proxy returns raw HTML
+      try { const j = JSON.parse(text); if (j.contents) return j.contents; } catch {}
       if (text.trim().startsWith('<') || text.includes('<!DOCTYPE')) return text;
     } catch (err) {
       console.warn(`[Nexus] Proxy failed (${proxyUrl}):`, err.message);
@@ -1161,12 +1257,16 @@ async function fetchWithProxies(targetUrl) {
 }
 
 async function scrapeMetadata(app) {
+  // Update card to show scanning state
+  const si = document.getElementById(`scraping-${app.id}`);
+  if (si) { si.textContent = 'Scanning…'; si.style.color = 'var(--amber)'; }
+
   try {
     const html = await fetchWithProxies(app.url);
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, 'text/html');
 
-    const get = (sel) => doc.querySelector(sel)?.content?.trim() || '';
+    const get     = sel => doc.querySelector(sel)?.content?.trim() || '';
     const getAttr = (sel, attr) => doc.querySelector(sel)?.getAttribute(attr)?.trim() || '';
 
     const ogTitle    = get('meta[property="og:title"]');
@@ -1180,51 +1280,62 @@ async function scrapeMetadata(app) {
       || getAttr('link[rel="apple-touch-icon"]', 'href')
       || '/favicon.ico';
 
-    // Resolve relative URLs
-    const makeAbsolute = (href) => {
-      if (!href || href.startsWith('http')) return href;
+    const makeAbsolute = href => {
+      if (!href || href.startsWith('http') || href.startsWith('data:')) return href;
       const base = new URL(app.url);
       return href.startsWith('/') ? `${base.origin}${href}` : `${base.origin}/${href}`;
     };
 
-    favicon              = makeAbsolute(favicon);
+    favicon = makeAbsolute(favicon);
     const resolvedOgImage = makeAbsolute(ogImage);
 
-    const rawTitle  = ogTitle || metaTitle;
-    const cleanTitle = rawTitle
-      .replace(/\s*[|\-–—]\s*.*/,'')
-      .replace(/\s*:.*$/,'')
-      .trim() || app.name;
+    // Base metadata from HTML tags
+    const rawTitle   = ogTitle || metaTitle;
+    let cleanTitle   = rawTitle.replace(/\s*[|\-–—]\s*.*/,'').replace(/\s*:.*$/,'').trim() || app.name;
+    const keywords   = get('meta[name="keywords"]');
+    let autoTag      = keywords ? keywords.split(',')[0].trim() : (app.tag || 'Application');
+    let finalDesc    = ogDesc || '';
 
-    const keywords = get('meta[name="keywords"]');
-    const autoTag  = keywords ? keywords.split(',')[0].trim() : (app.tag || 'Application');
+    // ── GROQ ENRICHMENT ──
+    // Use Groq if: no desc, or title looks like a domain/filename, or tag is still generic
+    const needsEnrichment = !finalDesc || cleanTitle === app.name || autoTag === 'Application';
+    if (needsEnrichment) {
+      if (si) { si.textContent = 'AI enriching…'; si.style.color = 'var(--gold)'; }
+      const groq = await groqEnrich(app, html);
+      if (groq) {
+        if (groq.name && !app.userSetName)  cleanTitle = groq.name;
+        if (groq.tag  && !app.userSetTag)   autoTag    = groq.tag;
+        if (groq.desc && !app.userSetDesc)  finalDesc  = groq.desc;
+      }
+    }
 
     app.meta = {
       title: cleanTitle,
-      desc: ogDesc || '',
+      desc: finalDesc,
       ogImage: resolvedOgImage || '',
       favicon: favicon || '',
       themeColor: themeColor || '',
       tag: autoTag,
-      scrapedAt: Date.now()
+      scrapedAt: Date.now(),
+      aiEnriched: needsEnrichment && !!getGroqKey()
     };
 
     if (!app.userSetName) app.name = cleanTitle;
-    if (!app.userSetDesc) app.desc = ogDesc || '';
+    if (!app.userSetDesc) app.desc = finalDesc;
     if (!app.userSetTag)  app.tag  = autoTag;
 
     save();
     refreshCard(app);
     return true;
+
   } catch (err) {
     console.warn(`[Nexus] Metadata scrape failed for ${app.url}:`, err);
-    const si = document.getElementById(`scraping-${app.id}`);
     if (si) { si.textContent = 'Scan failed'; si.style.color = 'var(--dim2)'; }
     return false;
   }
 }
 
-// Pull card DOM update into its own fn so scanAll can call it too
+// ── CARD DOM REFRESH ──
 function refreshCard(app) {
   const cardEl = document.getElementById(`card-${app.id}`);
   if (!cardEl) return;
@@ -1234,13 +1345,13 @@ function refreshCard(app) {
 
   const previewDiv  = cardEl.querySelector('.card-preview');
   const placeholder = previewDiv.querySelector('.card-preview-placeholder');
-  const { ogImage: resolvedOgImage, themeColor, favicon, title: cleanTitle, desc: ogDesc, tag: autoTag } = app.meta;
+  const { ogImage, themeColor, favicon, title: cleanTitle, desc: finalDesc, tag: autoTag, aiEnriched } = app.meta;
 
-  if (resolvedOgImage && !previewDiv.querySelector('img.og-img')) {
+  if (ogImage && !previewDiv.querySelector('img.og-img')) {
     const img = document.createElement('img');
     img.className = 'og-img';
-    img.src = resolvedOgImage;
-    img.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
+    img.src = ogImage;
+    img.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;position:absolute;inset:0;';
     img.onerror = () => img.remove();
     previewDiv.insertBefore(img, placeholder);
   }
@@ -1252,10 +1363,20 @@ function refreshCard(app) {
   }
 
   cardEl.querySelector('.card-name').textContent = cleanTitle;
-  if (ogDesc) cardEl.querySelector('.card-desc').textContent = ogDesc;
+  cardEl.querySelector('.card-desc').textContent = finalDesc || 'No description available.';
 
   const tagEl = cardEl.querySelector('.card-tag span');
-  if (tagEl) tagEl.textContent = autoTag;
+  if (tagEl) {
+    tagEl.textContent = autoTag;
+    // Show AI badge if Groq enriched
+    if (aiEnriched && !cardEl.querySelector('.ai-badge')) {
+      const badge = document.createElement('span');
+      badge.className = 'ai-badge';
+      badge.textContent = '✦ AI';
+      badge.style.cssText = 'font-family:"DM Mono",monospace;font-size:8px;letter-spacing:1px;color:var(--gold);opacity:0.7;margin-left:4px;';
+      tagEl.after(badge);
+    }
+  }
 
   if (favicon && !cardEl.querySelector('.fav-img')) {
     const tagContainer = cardEl.querySelector('.card-tag');
@@ -1263,7 +1384,7 @@ function refreshCard(app) {
     img.className = 'fav-img';
     img.src = favicon;
     img.width = 14; img.height = 14;
-    img.style.cssText = 'border-radius:3px;object-fit:contain;';
+    img.style.cssText = 'border-radius:3px;object-fit:contain;flex-shrink:0;';
     img.onerror = () => img.remove();
     tagContainer.insertBefore(img, tagContainer.firstChild);
   }
@@ -1279,37 +1400,33 @@ async function scanAll() {
   const btn  = document.getElementById('scan-all-btn');
   const icon = document.getElementById('scan-icon');
   const bar  = document.getElementById('scan-progress-bar');
-  if (btn.classList.contains('scanning')) return;
+  if (!btn || btn.classList.contains('scanning')) return;
 
   const targets = apps.filter(a => a.url && a.url.startsWith('http'));
   if (!targets.length) { toast('No apps to scan'); return; }
 
   btn.classList.add('scanning');
-  icon.className = 'spin';
-  icon.textContent = '⟳';
+  icon.innerHTML = '<span class="spin">⟳</span>';
   bar.style.display = 'block';
   bar.style.width = '0%';
 
   let done = 0, succeeded = 0;
-
-  toast(`Scanning ${targets.length} apps…`);
+  const hasGroq = !!getGroqKey();
+  toast(`Scanning ${targets.length} apps${hasGroq ? ' with AI enrichment' : ''}…`, 3000);
 
   for (const app of targets) {
-    app.meta = null; // force fresh scrape
+    app.meta = null;
     const ok = await scrapeMetadata(app);
     if (ok) succeeded++;
     done++;
     bar.style.width = `${Math.round((done / targets.length) * 100)}%`;
   }
 
-  // Done
   btn.classList.remove('scanning');
-  icon.className = '';
   icon.textContent = '⟳';
-  setTimeout(() => { bar.style.width = '0%'; bar.style.display = 'none'; }, 800);
-
-  toast(`Scan complete — ${succeeded}/${targets.length} apps updated`);
-  renderConfigRows(); // refresh config panel if open
+  setTimeout(() => { bar.style.width = '0%'; bar.style.display = 'none'; }, 1000);
+  toast(`Scan complete — ${succeeded}/${targets.length} apps updated`, 3000);
+  renderConfigRows();
 }
 
 function updateStats() {
@@ -1412,6 +1529,7 @@ function filterApps() {
 function openModal() {
   document.getElementById('config-modal').classList.add('open');
   renderConfigRows();
+  updateGroqStatus();
 }
 function closeModal() {
   document.getElementById('config-modal').classList.remove('open');
@@ -1574,6 +1692,7 @@ function importJSON(e) {
 
 // ── INIT ──
 loadStoredLogo();
+updateGroqStatus();
 render();
 
 // ── SERVICE WORKER ──
