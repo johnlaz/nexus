@@ -1,5 +1,5 @@
 // NEXUS v1 — Service Worker
-const CACHE_NAME = 'nexus-v1.1';
+const CACHE_NAME = 'nexus-v1.2';
 const STATIC_ASSETS = [
   './index.html',
   './manifest.json',

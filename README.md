@@ -50,6 +50,7 @@ nexus/
 
 | Version | Notes |
 |---------|-------|
+| v1.2 | Multi-proxy scraper (corsproxy → allorigins → codetabs fallback chain), Scan All button with progress bar |
 | v1.1 | Auto metadata scraping from URL — title, description, favicon, og:image, theme color |
 | v1.0 | Initial release — Dark luxury editorial UI, card previews, SW caching |
 
