@@ -1,16 +1,17 @@
-# NEXUS — TRS Control Center `v1`
+# NEXUS — App Portfolio `v1.1`
 
-> A dark-luxury editorial PWA dashboard for the Total Rental Solutions application suite.
+> A dark-luxury editorial PWA dashboard for showcasing and demoing a personal app portfolio.
 
 ## Overview
 
-NEXUS is a unified "Single Pane of Glass" control center for managing, monitoring, and launching the entire TRS PWA ecosystem from one polished interface.
+NEXUS is a unified control center for managing, monitoring, and launching a suite of independently hosted Progressive Web Apps — built as a polished portfolio hub and live demo environment.
 
 ## Features
 
 - **Editorial Dark UI** — Playfair Display + DM Mono typography, gold accent palette, grain overlay
+- **Auto Metadata Scraping** — Paste a URL and cards self-populate with title, description, favicon, og:image, and theme color
 - **Live Status Monitoring** — Real-time heartbeat pings with animated status indicators
-- **App Cards with Previews** — Rich cards with descriptions, tags, and launch actions
+- **App Cards with Previews** — Rich cards with og:image previews, favicons, and theme-color accents
 - **Inline Key Vault** — API keys surfaced contextually in the iframe header bar
 - **Dynamic Configuration** — Add/remove/edit apps live, persisted to `localStorage`
 - **Export / Import** — JSON config portability across machines
@@ -21,12 +22,12 @@ NEXUS is a unified "Single Pane of Glass" control center for managing, monitorin
 
 1. Push all files to a GitHub repository
 2. Go to **Settings → Pages → Source → Deploy from branch → main / root**
-3. Your suite will be live at `https://<username>.github.io/<repo-name>/`
+3. Your portfolio will be live at `https://<username>.github.io/<repo-name>/`
 
 ## File Structure
 
 ```
-nexus-v1/
+nexus/
 ├── index.html       ← Main app shell
 ├── manifest.json    ← PWA manifest
 ├── sw.js            ← Service worker (cache-first, offline support)
@@ -37,19 +38,20 @@ nexus-v1/
 └── README.md
 ```
 
-## Configuration
+## Adding Apps
 
-Click the **⚙ Configure** button in the sidebar to:
-- Add your GitHub-hosted PWA URLs
-- Set app names, tags, descriptions, and API keys
-- Upload your company logo
-- Export/import JSON config
+1. Click **⚙ Configure** in the sidebar
+2. Click **+ Add Application**
+3. Paste the URL — metadata is fetched automatically (title, description, favicon, og:image)
+4. Optionally override name, tag, description, or add an API key
+5. Hit **↻ Rescan** at any time to refresh metadata from the live URL
 
 ## Version History
 
 | Version | Notes |
 |---------|-------|
-| v1 | Initial release — Dark luxury editorial UI, card previews, SW caching |
+| v1.1 | Auto metadata scraping from URL — title, description, favicon, og:image, theme color |
+| v1.0 | Initial release — Dark luxury editorial UI, card previews, SW caching |
 
 ---
 

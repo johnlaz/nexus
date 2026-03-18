@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NEXUS — TRS Control Center</title>
-<meta name="description" content="TRS Nexus — Unified PWA Control Center for the Total Rental Solutions application suite.">
+<title>NEXUS — App Portfolio</title>
+<meta name="description" content="NEXUS — A unified dashboard for hosting, monitoring, and demoing a personal PWA portfolio.">
 <meta name="theme-color" content="#080808">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -835,9 +835,9 @@ main {
   <!-- ── SIDEBAR ── -->
   <aside>
     <div class="wordmark" onclick="showDashboard()">
-      <div class="wordmark-label">TRS Control Center</div>
+      <div class="wordmark-label">App Portfolio</div>
       <div class="wordmark-title">NEX<em>US</em></div>
-      <div class="wordmark-sub">Application Suite</div>
+      <div class="wordmark-sub">johnlaz.github.io</div>
     </div>
 
     <div class="sidebar-search">
@@ -965,9 +965,9 @@ main {
 <script>
 // ── STATE ──
 let apps = JSON.parse(localStorage.getItem('nexus-apps') || 'null') || [
-  { id: 'unplugged', name: 'UNPLUGGED', tag: 'Music PWA', desc: 'Musician inventory & AI-powered learning tools with Hero Game mode.', url: 'https://johnlaz.github.io/unplugged/', key: '' },
-  { id: 'armor', name: 'ARMOR', tag: 'Security', desc: 'Firearms inventory management with camera scanning and AI features.', url: 'https://example.com/armor', key: 'KEY-001' },
-  { id: 'asap', name: 'ASAP', tag: 'Operations', desc: 'Field operations and asset management platform.', url: 'https://example.com/asap', key: 'KEY-002' },
+  { id: 'unplugged', name: 'UNPLUGGED', tag: 'Music PWA', desc: '', url: 'https://johnlaz.github.io/unplugged/', key: '', meta: null },
+  { id: 'armor',    name: 'ARMOR',     tag: 'Security',   desc: '', url: 'https://example.com/armor',             key: 'KEY-001', meta: null },
+  { id: 'asap',     name: 'ASAP',      tag: 'Operations', desc: '', url: 'https://example.com/asap',              key: 'KEY-002', meta: null },
 ];
 
 let activeApp = null;
@@ -1018,27 +1018,58 @@ function renderGrid() {
   document.getElementById('app-count-label').textContent = `${apps.length} ${apps.length === 1 ? 'entry' : 'entries'}`;
 
   apps.forEach(app => {
-    const initial = app.name.charAt(0);
     const shortUrl = app.url.replace(/^https?:\/\//, '').replace(/\/$/, '');
+    const initial = (app.meta?.title || app.name || '?').charAt(0).toUpperCase();
+    const displayName = app.meta?.title || app.name;
+    const displayDesc = app.meta?.desc || app.desc || 'No description available.';
+    const displayTag = app.tag || app.meta?.tag || 'Application';
+    const favicon = app.meta?.favicon || '';
+    const ogImage = app.meta?.ogImage || '';
+    const themeColor = app.meta?.themeColor || '';
 
     const card = document.createElement('div');
     card.className = 'app-card';
+    card.id = `card-${app.id}`;
+
+    // Preview area: og:image if available, else stylized placeholder
+    const previewInner = ogImage
+      ? `<img src="${ogImage}" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+         <div class="card-preview-placeholder" style="display:none;">
+           <div class="card-preview-initial" style="${themeColor ? `color:${themeColor}` : ''}">${initial}</div>
+           <div class="card-preview-url">${shortUrl}</div>
+         </div>`
+      : `<div class="card-preview-placeholder">
+           <div class="card-preview-initial" style="${themeColor ? `color:${themeColor}` : ''}">${initial}</div>
+           <div class="card-preview-url">${shortUrl}</div>
+         </div>`;
+
+    // Favicon badge
+    const faviconHtml = favicon
+      ? `<img src="${favicon}" width="14" height="14" style="border-radius:3px;object-fit:contain;" onerror="this.style.display='none'">`
+      : '';
+
+    // Scrape state indicator
+    const scrapeIndicator = app.meta
+      ? '' 
+      : `<span id="scraping-${app.id}" style="font-family:'DM Mono',monospace;font-size:9px;color:var(--amber);letter-spacing:1px;">Scanning…</span>`;
+
     card.innerHTML = `
-      <div class="card-preview">
-        <div class="card-preview-placeholder">
-          <div class="card-preview-initial">${initial}</div>
-          <div class="card-preview-url">${shortUrl}</div>
-        </div>
+      <div class="card-preview" style="${themeColor ? `border-top:2px solid ${themeColor}` : ''}">
+        ${previewInner}
         <div class="card-preview-overlay"></div>
         <div class="card-status-badge">
           <span class="status-pip pip-checking" id="cardpip-${app.id}"></span>
-          <span class="s-checking" id="cardstat-${app.id}" style="font-size:9px; letter-spacing:2px;">CHECKING</span>
+          <span class="s-checking" id="cardstat-${app.id}" style="font-size:9px;letter-spacing:2px;">CHECKING</span>
         </div>
       </div>
       <div class="card-body">
-        <div class="card-tag">${app.tag || 'Application'}</div>
-        <div class="card-name">${app.name}</div>
-        <div class="card-desc">${app.desc || 'No description provided.'}</div>
+        <div class="card-tag" style="display:flex;align-items:center;gap:6px;">
+          ${faviconHtml}
+          <span>${displayTag}</span>
+          ${scrapeIndicator}
+        </div>
+        <div class="card-name">${displayName}</div>
+        <div class="card-desc">${displayDesc}</div>
         <div class="card-footer">
           <span class="card-url-display">${shortUrl}</span>
           <button class="card-launch-btn" onclick="event.stopPropagation(); launch(apps.find(a=>a.id==='${app.id}'))">Launch →</button>
@@ -1049,7 +1080,143 @@ function renderGrid() {
     grid.appendChild(card);
 
     checkStatus(app);
+
+    // Auto-scrape if no metadata yet
+    if (!app.meta && app.url && app.url.startsWith('http')) {
+      scrapeMetadata(app);
+    }
   });
+}
+
+// ── METADATA SCRAPER ──
+async function scrapeMetadata(app) {
+  const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(app.url)}`;
+  try {
+    const res = await fetch(proxyUrl, { signal: AbortSignal.timeout(10000) });
+    const data = await res.json();
+    const html = data.contents;
+    if (!html) return;
+
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+
+    // Extract metadata
+    const get = (sel) => doc.querySelector(sel)?.content?.trim() || '';
+    const getAttr = (sel, attr) => doc.querySelector(sel)?.getAttribute(attr)?.trim() || '';
+
+    const ogTitle   = get('meta[property="og:title"]');
+    const metaTitle = doc.querySelector('title')?.textContent?.trim() || '';
+    const ogDesc    = get('meta[property="og:description"]') || get('meta[name="description"]');
+    const ogImage   = get('meta[property="og:image"]');
+    const themeColor = get('meta[name="theme-color"]');
+
+    // Resolve favicon
+    let favicon = getAttr('link[rel="icon"]', 'href')
+      || getAttr('link[rel="shortcut icon"]', 'href')
+      || getAttr('link[rel="apple-touch-icon"]', 'href')
+      || '/favicon.ico';
+
+    // Make favicon absolute
+    if (favicon && !favicon.startsWith('http')) {
+      const base = new URL(app.url);
+      favicon = favicon.startsWith('/')
+        ? `${base.origin}${favicon}`
+        : `${base.origin}/${favicon}`;
+    }
+
+    // Make og:image absolute
+    let resolvedOgImage = ogImage;
+    if (ogImage && !ogImage.startsWith('http')) {
+      const base = new URL(app.url);
+      resolvedOgImage = ogImage.startsWith('/')
+        ? `${base.origin}${ogImage}`
+        : `${base.origin}/${ogImage}`;
+    }
+
+    // Derive a clean app name from title (strip common suffixes)
+    const rawTitle = ogTitle || metaTitle;
+    const cleanTitle = rawTitle
+      .replace(/\s*[|\-–—]\s*.*/,'')  // strip "— Site Name" suffixes
+      .replace(/\s*:.*$/,'')           // strip ": subtitle"
+      .trim() || app.name;
+
+    // Build tag from meta keywords or existing
+    const keywords = get('meta[name="keywords"]');
+    const autoTag = keywords
+      ? keywords.split(',')[0].trim()
+      : (app.tag || 'Application');
+
+    app.meta = {
+      title: cleanTitle,
+      desc: ogDesc || '',
+      ogImage: resolvedOgImage || '',
+      favicon: favicon || '',
+      themeColor: themeColor || '',
+      tag: autoTag,
+      scrapedAt: Date.now()
+    };
+
+    // If name/desc were still defaults, update them
+    if (!app.userSetName) app.name = cleanTitle;
+    if (!app.userSetDesc) app.desc = ogDesc || '';
+    if (!app.userSetTag)  app.tag  = autoTag;
+
+    save();
+
+    // Re-render just this card
+    const cardEl = document.getElementById(`card-${app.id}`);
+    if (cardEl) {
+      // Remove scraping indicator
+      const si = document.getElementById(`scraping-${app.id}`);
+      if (si) si.remove();
+
+      // Update card contents
+      const shortUrl = app.url.replace(/^https?:\/\//, '').replace(/\/$/, '');
+      const previewDiv = cardEl.querySelector('.card-preview');
+      const placeholder = previewDiv.querySelector('.card-preview-placeholder');
+
+      if (resolvedOgImage) {
+        const img = document.createElement('img');
+        img.src = resolvedOgImage;
+        img.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
+        img.onerror = () => img.remove();
+        previewDiv.insertBefore(img, placeholder);
+      }
+
+      if (themeColor) {
+        previewDiv.style.borderTop = `2px solid ${themeColor}`;
+        const init = placeholder?.querySelector('.card-preview-initial');
+        if (init) init.style.color = themeColor;
+      }
+
+      cardEl.querySelector('.card-name').textContent = cleanTitle;
+      if (ogDesc) cardEl.querySelector('.card-desc').textContent = ogDesc;
+
+      const tagEl = cardEl.querySelector('.card-tag span');
+      if (tagEl) tagEl.textContent = autoTag;
+
+      // Insert favicon
+      if (favicon) {
+        const tagContainer = cardEl.querySelector('.card-tag');
+        const img = document.createElement('img');
+        img.src = favicon;
+        img.width = 14; img.height = 14;
+        img.style.cssText = 'border-radius:3px;object-fit:contain;';
+        img.onerror = () => img.remove();
+        tagContainer.insertBefore(img, tagContainer.firstChild);
+      }
+
+      // Also update sidebar nav item
+      const navName = document.querySelector(`#nav-${app.id} .nav-item-name`);
+      if (navName) navName.textContent = cleanTitle;
+      const navTag = document.querySelector(`#nav-${app.id} .nav-item-tag`);
+      if (navTag) navTag.textContent = autoTag;
+    }
+  } catch (err) {
+    console.warn(`[Nexus] Metadata scrape failed for ${app.url}:`, err);
+    const si = document.getElementById(`scraping-${app.id}`);
+    if (si) { si.textContent = 'Scan failed'; si.style.color = 'var(--dim2)'; }
+  }
 }
 
 function updateStats() {
@@ -1172,32 +1339,78 @@ function renderConfigRows() {
   const container = document.getElementById('config-rows');
   container.innerHTML = '';
   apps.forEach((app, i) => {
+    const favicon = app.meta?.favicon || '';
+    const scrapedLabel = app.meta
+      ? `<span style="color:var(--green);font-size:9px;font-family:'DM Mono',monospace;letter-spacing:1px;">✓ Auto-filled</span>`
+      : `<span style="color:var(--dim);font-size:9px;font-family:'DM Mono',monospace;letter-spacing:1px;">Paste URL to scan</span>`;
+
     const row = document.createElement('div');
     row.className = 'config-row';
     row.innerHTML = `
       <div class="config-row-header">
-        <span class="config-row-num">APP ${String(i+1).padStart(2,'0')}</span>
-        <button class="delete-btn" onclick="deleteApp('${app.id}')">🗑</button>
+        <div style="display:flex;align-items:center;gap:8px;">
+          ${favicon ? `<img src="${favicon}" width="14" height="14" style="border-radius:3px;" onerror="this.style.display='none'">` : ''}
+          <span class="config-row-num">APP ${String(i+1).padStart(2,'0')}</span>
+          ${scrapedLabel}
+        </div>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <button onclick="rescanApp('${app.id}')" style="background:none;border:1px solid var(--dim2);color:var(--dim);font-size:10px;padding:3px 8px;border-radius:4px;cursor:pointer;font-family:'DM Mono',monospace;letter-spacing:1px;" title="Re-scan metadata">↻ Rescan</button>
+          <button class="delete-btn" onclick="deleteApp('${app.id}')">🗑</button>
+        </div>
       </div>
       <div class="config-inputs">
-        <input class="config-input" placeholder="App Name" value="${app.name}" oninput="updateApp('${app.id}','name',this.value)">
-        <input class="config-input" placeholder="Tag (e.g. Music PWA)" value="${app.tag||''}" oninput="updateApp('${app.id}','tag',this.value)">
-        <input class="config-input full" placeholder="URL (https://...)" value="${app.url}" oninput="updateApp('${app.id}','url',this.value)">
-        <input class="config-input full" placeholder="API Key / License (optional)" value="${app.key||''}" oninput="updateApp('${app.id}','key',this.value)">
-        <textarea class="config-input-desc" placeholder="Short description..." oninput="updateApp('${app.id}','desc',this.value)">${app.desc||''}</textarea>
+        <input class="config-input" placeholder="App Name" value="${escHtml(app.name)}" oninput="updateApp('${app.id}','name',this.value)">
+        <input class="config-input" placeholder="Tag (e.g. Music PWA)" value="${escHtml(app.tag||'')}" oninput="updateApp('${app.id}','tag',this.value)">
+        <input class="config-input full" placeholder="URL — paste to auto-scan metadata" value="${escHtml(app.url)}" oninput="updateApp('${app.id}','url',this.value)">
+        <input class="config-input full" placeholder="API Key / License (optional)" value="${escHtml(app.key||'')}" oninput="updateApp('${app.id}','key',this.value)">
+        <textarea class="config-input-desc" placeholder="Description (auto-filled from meta)" oninput="updateApp('${app.id}','desc',this.value)">${escHtml(app.desc||'')}</textarea>
       </div>
     `;
     container.appendChild(row);
   });
 }
 
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function rescanApp(id) {
+  const app = apps.find(a => a.id === id);
+  if (!app) return;
+  app.meta = null;
+  app.userSetName = false;
+  app.userSetDesc = false;
+  app.userSetTag  = false;
+  save();
+  renderConfigRows();
+  scrapeMetadata(app).then(() => renderConfigRows());
+  toast('Rescanning metadata…');
+}
+
+// Debounce scrape triggers so rapid typing doesn't fire 10 requests
+const _scrapeTimers = {};
+function debounceRescrape(app) {
+  clearTimeout(_scrapeTimers[app.id]);
+  _scrapeTimers[app.id] = setTimeout(() => scrapeMetadata(app), 1200);
+}
+
 function updateApp(id, field, val) {
   const app = apps.find(a => a.id === id);
-  if (app) { app[field] = val; save(); }
+  if (!app) return;
+  app[field] = val;
+  if (field === 'name') app.userSetName = true;
+  if (field === 'desc') app.userSetDesc = true;
+  if (field === 'tag')  app.userSetTag  = true;
+  if (field === 'url' && val.startsWith('http') && val.length > 12) {
+    app.meta = null;
+    debounceRescrape(app);
+  }
+  save();
 }
 
 function addApp() {
-  apps.push({ id: uid(), name: 'New App', tag: 'Application', desc: '', url: 'https://', key: '' });
+  const newApp = { id: uid(), name: 'New App', tag: 'Application', desc: '', url: 'https://', key: '', meta: null };
+  apps.push(newApp);
   renderConfigRows();
   save();
 }
@@ -1224,9 +1437,9 @@ function handleLogo(e) {
 function resetLogo() {
   localStorage.removeItem('nexus-logo');
   document.querySelector('.wordmark').innerHTML = `
-    <div class="wordmark-label">TRS Control Center</div>
+    <div class="wordmark-label">App Portfolio</div>
     <div class="wordmark-title">NEX<em>US</em></div>
-    <div class="wordmark-sub">Application Suite</div>
+    <div class="wordmark-sub">johnlaz.github.io</div>
   `;
   document.querySelector('.wordmark').onclick = showDashboard;
 }

@@ -1,7 +1,7 @@
 {
-  "name": "NEXUS — TRS Control Center",
+  "name": "NEXUS — App Portfolio",
   "short_name": "NEXUS",
-  "description": "Unified PWA Control Center for the Total Rental Solutions application suite.",
+  "description": "A unified dashboard for hosting, monitoring, and demoing a personal PWA portfolio.",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#080808",
