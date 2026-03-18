@@ -1080,23 +1080,24 @@ function renderGrid() {
   document.getElementById('app-count-label').textContent = `${apps.length} ${apps.length === 1 ? 'entry' : 'entries'}`;
 
   apps.forEach(app => {
-    const shortUrl = app.url.replace(/^https?:\/\//, '').replace(/\/$/, '');
-    const initial = (app.meta?.title || app.name || '?').charAt(0).toUpperCase();
-    const displayName = app.meta?.title || app.name;
-    const displayDesc = app.meta?.desc || app.desc || 'No description available.';
-    const displayTag = app.tag || app.meta?.tag || 'Application';
-    const favicon = app.meta?.favicon || '';
-    const ogImage = app.meta?.ogImage || '';
-    const themeColor = app.meta?.themeColor || '';
+    const shortUrl    = app.url.replace(/^https?:\/\//, '').replace(/\/$/, '');
+    // Manual fields always win over scraped
+    const displayName = app.name || app.meta?.title || '?';
+    const displayDesc = app.desc || app.meta?.desc || 'No description available.';
+    const displayTag  = app.tag  || app.meta?.tag  || 'Application';
+    const initial     = displayName.charAt(0).toUpperCase();
+    // userIcon > scraped favicon
+    const iconSrc     = app.userIcon || app.meta?.favicon || '';
+    const ogImage     = app.meta?.ogImage || '';
+    const themeColor  = app.meta?.themeColor || '';
 
     const card = document.createElement('div');
     card.className = 'app-card';
     card.id = `card-${app.id}`;
 
-    // Preview area: og:image if available, else stylized placeholder
     const previewInner = ogImage
-      ? `<img src="${ogImage}" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-         <div class="card-preview-placeholder" style="display:none;">
+      ? `<img class="og-img" src="${ogImage}" style="width:100%;height:100%;object-fit:cover;display:block;position:absolute;inset:0;" onerror="this.remove()">
+         <div class="card-preview-placeholder">
            <div class="card-preview-initial" style="${themeColor ? `color:${themeColor}` : ''}">${initial}</div>
            <div class="card-preview-url">${shortUrl}</div>
          </div>`
@@ -1105,15 +1106,17 @@ function renderGrid() {
            <div class="card-preview-url">${shortUrl}</div>
          </div>`;
 
-    // Favicon badge
-    const faviconHtml = favicon
-      ? `<img src="${favicon}" width="14" height="14" style="border-radius:3px;object-fit:contain;" onerror="this.style.display='none'">`
+    const iconHtml = iconSrc
+      ? `<img class="fav-img" src="${iconSrc}" width="14" height="14" style="border-radius:3px;object-fit:contain;flex-shrink:0;" onerror="this.remove()">`
       : '';
 
-    // Scrape state indicator
     const scrapeIndicator = app.meta
-      ? '' 
+      ? ''
       : `<span id="scraping-${app.id}" style="font-family:'DM Mono',monospace;font-size:9px;color:var(--amber);letter-spacing:1px;">Scanning…</span>`;
+
+    const aiBadge = app.meta?.aiEnriched
+      ? `<span class="ai-badge" style="font-family:'DM Mono',monospace;font-size:8px;letter-spacing:1px;color:var(--gold);opacity:0.7;">✦ AI</span>`
+      : '';
 
     card.innerHTML = `
       <div class="card-preview" style="${themeColor ? `border-top:2px solid ${themeColor}` : ''}">
@@ -1125,9 +1128,10 @@ function renderGrid() {
         </div>
       </div>
       <div class="card-body">
-        <div class="card-tag" style="display:flex;align-items:center;gap:6px;">
-          ${faviconHtml}
+        <div class="card-tag" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+          ${iconHtml}
           <span>${displayTag}</span>
+          ${aiBadge}
           ${scrapeIndicator}
         </div>
         <div class="card-name">${displayName}</div>
@@ -1347,6 +1351,9 @@ function refreshCard(app) {
   const placeholder = previewDiv.querySelector('.card-preview-placeholder');
   const { ogImage, themeColor, favicon, title: cleanTitle, desc: finalDesc, tag: autoTag, aiEnriched } = app.meta;
 
+  // userIcon always wins over scraped favicon
+  const iconSrc = app.userIcon || favicon || '';
+
   if (ogImage && !previewDiv.querySelector('img.og-img')) {
     const img = document.createElement('img');
     img.className = 'og-img';
@@ -1362,37 +1369,42 @@ function refreshCard(app) {
     if (init) init.style.color = themeColor;
   }
 
-  cardEl.querySelector('.card-name').textContent = cleanTitle;
-  cardEl.querySelector('.card-desc').textContent = finalDesc || 'No description available.';
+  // Respect manual overrides — don't overwrite user-set fields
+  if (!app.userSetName) cardEl.querySelector('.card-name').textContent = cleanTitle;
+  if (!app.userSetDesc) cardEl.querySelector('.card-desc').textContent = finalDesc || 'No description available.';
 
   const tagEl = cardEl.querySelector('.card-tag span');
-  if (tagEl) {
-    tagEl.textContent = autoTag;
-    // Show AI badge if Groq enriched
-    if (aiEnriched && !cardEl.querySelector('.ai-badge')) {
-      const badge = document.createElement('span');
-      badge.className = 'ai-badge';
-      badge.textContent = '✦ AI';
-      badge.style.cssText = 'font-family:"DM Mono",monospace;font-size:8px;letter-spacing:1px;color:var(--gold);opacity:0.7;margin-left:4px;';
-      tagEl.after(badge);
-    }
+  if (tagEl && !app.userSetTag) tagEl.textContent = autoTag;
+  if (aiEnriched && !cardEl.querySelector('.ai-badge')) {
+    const badge = document.createElement('span');
+    badge.className = 'ai-badge';
+    badge.textContent = '✦ AI';
+    badge.style.cssText = 'font-family:"DM Mono",monospace;font-size:8px;letter-spacing:1px;color:var(--gold);opacity:0.7;margin-left:4px;';
+    tagEl?.after(badge);
   }
 
-  if (favicon && !cardEl.querySelector('.fav-img')) {
+  // Icon: remove old, insert fresh (userIcon may have changed)
+  const oldFav = cardEl.querySelector('.fav-img');
+  if (oldFav) oldFav.remove();
+  if (iconSrc) {
     const tagContainer = cardEl.querySelector('.card-tag');
     const img = document.createElement('img');
     img.className = 'fav-img';
-    img.src = favicon;
+    img.src = iconSrc;
     img.width = 14; img.height = 14;
     img.style.cssText = 'border-radius:3px;object-fit:contain;flex-shrink:0;';
     img.onerror = () => img.remove();
-    tagContainer.insertBefore(img, tagContainer.firstChild);
+    tagContainer?.insertBefore(img, tagContainer.firstChild);
   }
 
-  const navName = document.querySelector(`#nav-${app.id} .nav-item-name`);
-  if (navName) navName.textContent = cleanTitle;
-  const navTag = document.querySelector(`#nav-${app.id} .nav-item-tag`);
-  if (navTag) navTag.textContent = autoTag;
+  if (!app.userSetName) {
+    const navName = document.querySelector(`#nav-${app.id} .nav-item-name`);
+    if (navName) navName.textContent = cleanTitle;
+  }
+  if (!app.userSetTag) {
+    const navTag = document.querySelector(`#nav-${app.id} .nav-item-tag`);
+    if (navTag) navTag.textContent = autoTag;
+  }
 }
 
 // ── SCAN ALL ──
@@ -1484,16 +1496,48 @@ function launch(app) {
   const iframeView = document.getElementById('iframe-view');
   iframeView.style.display = 'flex';
 
-  document.getElementById('iframe-app-name').textContent = app.name;
-  document.getElementById('iframe-app-url').textContent = app.url;
-  document.getElementById('app-frame').src = app.url;
+  // Header: icon + name
+  const iconSrc = app.userIcon || app.meta?.favicon || '';
+  const nameEl  = document.getElementById('iframe-app-name');
+  nameEl.innerHTML = iconSrc
+    ? `<img src="${iconSrc}" width="18" height="18" style="border-radius:4px;object-fit:contain;vertical-align:middle;margin-right:8px;" onerror="this.remove()">${escHtml(app.name)}`
+    : escHtml(app.name);
 
+  document.getElementById('iframe-app-url').textContent = app.url;
+
+  // Key vault display
   const keyArea = document.getElementById('key-area');
   if (app.key) {
     keyArea.style.display = 'flex';
     document.getElementById('active-key').textContent = app.key;
   } else {
     keyArea.style.display = 'none';
+  }
+
+  // Load iframe
+  const frame = document.getElementById('app-frame');
+  frame.src = app.url;
+
+  // Inject API key into iframe via postMessage once it loads
+  if (app.key) {
+    const injectKey = () => {
+      try {
+        frame.contentWindow.postMessage({
+          type: 'NEXUS_KEY_INJECT',
+          key: app.key,
+          appId: app.id,
+          appName: app.name
+        }, '*');
+      } catch(e) {}
+    };
+    frame.onload = injectKey;
+    // Also try after a short delay for SPAs that delay rendering
+    frame.onload = () => {
+      injectKey();
+      setTimeout(injectKey, 1500);
+    };
+  } else {
+    frame.onload = null;
   }
 
   document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
@@ -1550,32 +1594,60 @@ function renderConfigRows() {
   const container = document.getElementById('config-rows');
   container.innerHTML = '';
   apps.forEach((app, i) => {
-    const favicon = app.meta?.favicon || '';
-    const scrapedLabel = app.meta
-      ? `<span style="color:var(--green);font-size:9px;font-family:'DM Mono',monospace;letter-spacing:1px;">✓ Auto-filled</span>`
-      : `<span style="color:var(--dim);font-size:9px;font-family:'DM Mono',monospace;letter-spacing:1px;">Paste URL to scan</span>`;
+    // Icon priority: user-uploaded > scraped favicon
+    const iconSrc = app.userIcon || app.meta?.favicon || '';
+    const hasIcon = !!iconSrc;
+    const statusLabel = app.meta
+      ? `<span style="color:var(--green);font-size:9px;font-family:'DM Mono',monospace;letter-spacing:1px;">✓ Scanned</span>`
+      : `<span style="color:var(--dim);font-size:9px;font-family:'DM Mono',monospace;letter-spacing:1px;">Not scanned</span>`;
+    const manualLabel = (app.userSetName || app.userSetDesc || app.userSetTag || app.userIcon)
+      ? `<span style="color:var(--gold);font-size:9px;font-family:'DM Mono',monospace;letter-spacing:1px;">✎ Manual</span>`
+      : '';
 
     const row = document.createElement('div');
     row.className = 'config-row';
     row.innerHTML = `
       <div class="config-row-header">
         <div style="display:flex;align-items:center;gap:8px;">
-          ${favicon ? `<img src="${favicon}" width="14" height="14" style="border-radius:3px;" onerror="this.style.display='none'">` : ''}
           <span class="config-row-num">APP ${String(i+1).padStart(2,'0')}</span>
-          ${scrapedLabel}
+          ${statusLabel}
+          ${manualLabel}
         </div>
         <div style="display:flex;gap:6px;align-items:center;">
-          <button onclick="rescanApp('${app.id}')" style="background:none;border:1px solid var(--dim2);color:var(--dim);font-size:10px;padding:3px 8px;border-radius:4px;cursor:pointer;font-family:'DM Mono',monospace;letter-spacing:1px;" title="Re-scan metadata">↻ Rescan</button>
+          <button onclick="rescanApp('${app.id}')" style="background:none;border:1px solid var(--dim2);color:var(--dim);font-size:10px;padding:3px 8px;border-radius:4px;cursor:pointer;font-family:'DM Mono',monospace;letter-spacing:1px;">↻ Rescan</button>
           <button class="delete-btn" onclick="deleteApp('${app.id}')">🗑</button>
         </div>
       </div>
-      <div class="config-inputs">
-        <input class="config-input" placeholder="App Name" value="${escHtml(app.name)}" oninput="updateApp('${app.id}','name',this.value)">
-        <input class="config-input" placeholder="Tag (e.g. Music PWA)" value="${escHtml(app.tag||'')}" oninput="updateApp('${app.id}','tag',this.value)">
-        <input class="config-input full" placeholder="URL — paste to auto-scan metadata" value="${escHtml(app.url)}" oninput="updateApp('${app.id}','url',this.value)">
-        <input class="config-input full" placeholder="API Key / License (optional)" value="${escHtml(app.key||'')}" oninput="updateApp('${app.id}','key',this.value)">
-        <textarea class="config-input-desc" placeholder="Description (auto-filled from meta)" oninput="updateApp('${app.id}','desc',this.value)">${escHtml(app.desc||'')}</textarea>
+      <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:10px;">
+        <!-- Icon upload zone -->
+        <label id="icon-label-${app.id}" title="Upload app icon" style="
+          width:52px;height:52px;flex-shrink:0;
+          background:var(--surface2);border:1px dashed ${hasIcon ? 'transparent' : 'var(--dim2)'};
+          border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+          overflow:hidden;position:relative;transition:border-color 0.2s;
+        ">
+          ${hasIcon
+            ? `<img src="${iconSrc}" style="width:100%;height:100%;object-fit:cover;border-radius:7px;" onerror="this.style.display='none'">`
+            : `<span style="font-size:18px;color:var(--dim2);">+</span>`
+          }
+          <input type="file" accept="image/*" style="display:none" onchange="uploadIcon('${app.id}', event)">
+        </label>
+        <div style="flex-grow:1;display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <input class="config-input" placeholder="App Name" value="${escHtml(app.name)}"
+            oninput="updateApp('${app.id}','name',this.value)">
+          <input class="config-input" placeholder="Tag (e.g. Music PWA)" value="${escHtml(app.tag||'')}"
+            oninput="updateApp('${app.id}','tag',this.value)">
+        </div>
       </div>
+      <div class="config-inputs">
+        <input class="config-input full" placeholder="URL — paste to auto-scan" value="${escHtml(app.url)}"
+          oninput="updateApp('${app.id}','url',this.value)">
+        <input class="config-input full" placeholder="API Key / License (optional — auto-injected on launch)" value="${escHtml(app.key||'')}"
+          oninput="updateApp('${app.id}','key',this.value)">
+        <textarea class="config-input-desc" placeholder="Description (manual input overrides scan)"
+          oninput="updateApp('${app.id}','desc',this.value)">${escHtml(app.desc||'')}</textarea>
+      </div>
+      ${app.userIcon ? `<button onclick="clearIcon('${app.id}')" style="background:none;border:none;color:var(--dim2);font-size:10px;font-family:'DM Mono',monospace;letter-spacing:1px;cursor:pointer;padding:4px 0;text-align:left;">✕ Remove custom icon</button>` : ''}
     `;
     container.appendChild(row);
   });
@@ -1583,6 +1655,72 @@ function renderConfigRows() {
 
 function escHtml(str) {
   return String(str).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ── ICON UPLOAD ──
+function uploadIcon(id, e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  // Resize to max 128px before storing as base64 to keep export size sane
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const img = new Image();
+    img.onload = () => {
+      const size = 128;
+      const canvas = document.createElement('canvas');
+      canvas.width = size; canvas.height = size;
+      const ctx = canvas.getContext('2d');
+      // Draw centered crop
+      const scale = Math.max(size / img.width, size / img.height);
+      const w = img.width * scale, h = img.height * scale;
+      ctx.drawImage(img, (size - w) / 2, (size - h) / 2, w, h);
+      const b64 = canvas.toDataURL('image/png');
+      const app = apps.find(a => a.id === id);
+      if (!app) return;
+      app.userIcon = b64;
+      save();
+      renderConfigRows();
+      // Also update the live card immediately
+      updateCardIcon(app);
+      toast('Icon saved');
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearIcon(id) {
+  const app = apps.find(a => a.id === id);
+  if (!app) return;
+  delete app.userIcon;
+  save();
+  renderConfigRows();
+  updateCardIcon(app);
+  toast('Custom icon removed');
+}
+
+function updateCardIcon(app) {
+  // Update card favicon display
+  const cardEl = document.getElementById(`card-${app.id}`);
+  if (!cardEl) return;
+  const tagContainer = cardEl.querySelector('.card-tag');
+  const existing = tagContainer?.querySelector('.fav-img');
+  const iconSrc = app.userIcon || app.meta?.favicon || '';
+  if (existing) {
+    if (iconSrc) { existing.src = iconSrc; }
+    else { existing.remove(); }
+  } else if (iconSrc && tagContainer) {
+    const img = document.createElement('img');
+    img.className = 'fav-img';
+    img.src = iconSrc;
+    img.width = 14; img.height = 14;
+    img.style.cssText = 'border-radius:3px;object-fit:contain;flex-shrink:0;';
+    img.onerror = () => img.remove();
+    tagContainer.insertBefore(img, tagContainer.firstChild);
+  }
+  // Also update sidebar nav item if it has an icon
+  const navIcon = document.querySelector(`#nav-${app.id} .nav-fav`);
+  if (navIcon && iconSrc) navIcon.src = iconSrc;
 }
 
 function rescanApp(id) {
@@ -1668,12 +1806,26 @@ function loadStoredLogo() {
 
 // ── IO ──
 function exportJSON() {
-  const blob = new Blob([JSON.stringify(apps, null, 2)], { type: 'application/json' });
+  // Export full app state — includes userIcon (base64), userSet flags, meta, keys
+  const exportData = apps.map(app => ({
+    id:          app.id,
+    name:        app.name,
+    tag:         app.tag,
+    desc:        app.desc,
+    url:         app.url,
+    key:         app.key || '',
+    userIcon:    app.userIcon || null,
+    userSetName: app.userSetName || false,
+    userSetDesc: app.userSetDesc || false,
+    userSetTag:  app.userSetTag  || false,
+    meta:        app.meta || null,
+  }));
+  const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = 'nexus_config.json';
+  a.download = `nexus_config_${new Date().toISOString().slice(0,10)}.json`;
   a.click();
-  toast('Config exported');
+  toast('Config exported — includes icons & descriptions');
 }
 
 function importJSON(e) {

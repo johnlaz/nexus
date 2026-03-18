@@ -50,6 +50,7 @@ nexus/
 
 | Version | Notes |
 |---------|-------|
+| v1.4 | Icon upload per app (52px zone in config, stored as base64), export retains icons + manual data, manual fields lock against scan overwrites, API key injected into iframe via postMessage on launch |
 | v1.3 | Groq AI enrichment — reads full page content to generate name, tag, description when meta tags are sparse. AI Settings tab. ✦ AI badge on enriched cards. Scan All button with live progress. |
 | v1.2 | Multi-proxy scraper (corsproxy → allorigins → codetabs fallback chain), Scan All button with progress bar |
 | v1.1 | Auto metadata scraping from URL — title, description, favicon, og:image, theme color |
