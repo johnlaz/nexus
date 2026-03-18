@@ -10,8 +10,10 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="NEXUS">
 <link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/x-icon" href="icons/favicon.ico">
 <link rel="icon" type="image/png" sizes="32x32" href="icons/icon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="icons/icon-16.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=DM+Mono:wght@300;400;500&family=Instrument+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -635,6 +637,43 @@ main {
   .card-name { font-size: 0.85rem; }
 }
 
+/* ── PORTRAIT: full-width single column cards, more breathing room ── */
+@media (max-width: 768px) and (orientation: portrait) {
+  .cards-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+  .app-card { flex-direction: row; height: 100px; }
+  .card-preview {
+    width: 100px;
+    height: 100px;
+    flex-shrink: 0;
+    border-radius: 10px 0 0 10px;
+  }
+  .card-preview-user-icon img { width: 52px; height: 52px; }
+  .card-preview-initial { font-size: 1.8rem; }
+  .card-body {
+    padding: 12px 14px;
+    justify-content: center;
+    flex-grow: 1;
+    overflow: hidden;
+  }
+  .card-tag { margin-bottom: 3px; }
+  .card-name { font-size: 1rem; margin-bottom: 4px; }
+  .card-desc { display: block; -webkit-line-clamp: 1; display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 8px; }
+  .card-footer { margin-top: auto; }
+  .card-url-display { display: none; }
+}
+
+/* ── LANDSCAPE PHONE: compact 3-col grid ── */
+@media (max-width: 900px) and (orientation: landscape) and (max-height: 500px) {
+  .cards-grid { grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .card-preview { height: 90px; }
+  .card-preview-user-icon img { width: 40px; height: 40px; }
+  .card-name { font-size: 0.85rem; }
+  .dash-body { padding: 12px 12px 72px; }
+}
+
 /* ── IFRAME VIEW ── */
 .iframe-wrapper {
   flex-grow: 1;
@@ -1017,7 +1056,7 @@ main {
     <div class="wordmark" onclick="showDashboard()">
       <div class="wordmark-label">App Portfolio</div>
       <div class="wordmark-title">NEX<em>US</em></div>
-      <div class="wordmark-sub">johnlaz.github.io</div>
+      <div class="wordmark-sub">v2.0 — johnlaz.github.io</div>
     </div>
 
     <div class="sidebar-search">
@@ -1971,7 +2010,7 @@ function resetLogo() {
   document.querySelector('.wordmark').innerHTML = `
     <div class="wordmark-label">App Portfolio</div>
     <div class="wordmark-title">NEX<em>US</em></div>
-    <div class="wordmark-sub">johnlaz.github.io</div>
+    <div class="wordmark-sub">v2.0 — johnlaz.github.io</div>
   `;
   document.querySelector('.wordmark').onclick = showDashboard;
 }
