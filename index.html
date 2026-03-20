@@ -1189,13 +1189,56 @@ main {
 
       <!-- IO TAB -->
       <div id="tab-io" style="display:none;">
-        <div class="io-grid">
-          <button class="io-btn io-btn-primary" onclick="exportJSON()">↓ &nbsp;Export JSON Config</button>
-          <label class="io-btn io-btn-ghost" style="text-align:center; display:block; line-height:1;">
-            ↑ &nbsp;Import JSON Config
-            <input type="file" accept=".json" style="display:none" onchange="importJSON(event)">
-          </label>
+
+        <!-- FULL SUITE (master) -->
+        <div style="margin-bottom:20px;">
+          <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;margin-bottom:10px;">Full Suite Backup</div>
+          <div style="font-size:11px;color:var(--dim);line-height:1.6;margin-bottom:12px;">
+            One file — all apps, keys, icons, descriptions, AI metadata, and Groq key. Import it on any device to restore everything instantly.
+          </div>
+          <div class="io-grid">
+            <button class="io-btn io-btn-primary" onclick="exportSuite()">↓ &nbsp;Export Full Suite</button>
+            <label class="io-btn io-btn-ghost" style="text-align:center;display:flex;align-items:center;justify-content:center;cursor:pointer;">
+              ↑ &nbsp;Import Full Suite
+              <input type="file" accept=".json" style="display:none" onchange="importSuite(event)">
+            </label>
+          </div>
         </div>
+
+        <div style="height:1px;background:var(--border);margin-bottom:20px;"></div>
+
+        <!-- KEYS ONLY (lightweight) -->
+        <div style="margin-bottom:20px;">
+          <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:3px;color:var(--dim);text-transform:uppercase;margin-bottom:10px;">Keys Only</div>
+          <div style="font-size:11px;color:var(--dim);line-height:1.6;margin-bottom:12px;">
+            Export just the app names and API keys — lightweight file for quick key sharing or injection without icons or metadata.
+          </div>
+          <div class="io-grid">
+            <button class="io-btn io-btn-ghost" onclick="exportKeys()">↓ &nbsp;Export Keys</button>
+            <label class="io-btn io-btn-ghost" style="text-align:center;display:flex;align-items:center;justify-content:center;cursor:pointer;">
+              ↑ &nbsp;Import Keys
+              <input type="file" accept=".json" style="display:none" onchange="importKeys(event)">
+            </label>
+          </div>
+        </div>
+
+        <div style="height:1px;background:var(--border);margin-bottom:20px;"></div>
+
+        <!-- APPS ONLY (no icons) -->
+        <div>
+          <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:3px;color:var(--dim);text-transform:uppercase;margin-bottom:10px;">Apps Config (no icons)</div>
+          <div style="font-size:11px;color:var(--dim);line-height:1.6;margin-bottom:12px;">
+            URLs, names, tags, descriptions — no base64 icons. Smaller file, safe to share or commit to version control.
+          </div>
+          <div class="io-grid">
+            <button class="io-btn io-btn-ghost" onclick="exportApps()">↓ &nbsp;Export Apps</button>
+            <label class="io-btn io-btn-ghost" style="text-align:center;display:flex;align-items:center;justify-content:center;cursor:pointer;">
+              ↑ &nbsp;Import Apps
+              <input type="file" accept=".json" style="display:none" onchange="importApps(event)">
+            </label>
+          </div>
+        </div>
+
       </div>
     </div>
   </div>
@@ -2027,42 +2070,195 @@ function loadStoredLogo() {
 }
 
 // ── IO ──
-function exportJSON() {
-  // Export full app state — includes userIcon (base64), userSet flags, meta, keys
-  const exportData = apps.map(app => ({
-    id:          app.id,
-    name:        app.name,
-    tag:         app.tag,
-    desc:        app.desc,
-    url:         app.url,
-    key:         app.key || '',
-    userIcon:    app.userIcon || null,
-    userSetName: app.userSetName || false,
-    userSetDesc: app.userSetDesc || false,
-    userSetTag:  app.userSetTag  || false,
-    meta:        app.meta || null,
-  }));
-  const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+function dl(data, filename) {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = `nexus_config_${new Date().toISOString().slice(0,10)}.json`;
+  a.download = filename;
   a.click();
-  toast('Config exported — includes icons & descriptions');
 }
 
-function importJSON(e) {
+function datestamp() { return new Date().toISOString().slice(0,10); }
+
+// ── FULL SUITE EXPORT — everything: apps + icons + meta + Groq key + brand logo ──
+function exportSuite() {
+  const payload = {
+    _nexus: 'full-suite',
+    _version: '2.0',
+    _exported: new Date().toISOString(),
+    groqKey: getGroqKey() || '',
+    brandLogo: localStorage.getItem('nexus-logo') || '',
+    apps: apps.map(app => ({
+      id:          app.id,
+      name:        app.name,
+      tag:         app.tag,
+      desc:        app.desc,
+      url:         app.url,
+      key:         app.key || '',
+      userIcon:    app.userIcon || null,
+      userSetName: app.userSetName || false,
+      userSetDesc: app.userSetDesc || false,
+      userSetTag:  app.userSetTag  || false,
+      meta:        app.meta || null,
+    }))
+  };
+  dl(payload, `nexus_suite_${datestamp()}.json`);
+  toast(`Full suite exported — ${apps.length} apps, keys & icons included`);
+}
+
+function importSuite(e) {
   const reader = new FileReader();
   reader.onload = ev => {
     try {
-      apps = JSON.parse(ev.target.result);
-      save();
+      const payload = JSON.parse(ev.target.result);
+      if (!payload._nexus) throw new Error('Not a NEXUS suite file');
+
+      // Restore apps
+      if (Array.isArray(payload.apps)) {
+        apps = payload.apps;
+        save();
+      }
+      // Restore Groq key
+      if (payload.groqKey) {
+        localStorage.setItem('nexus-groq-key', payload.groqKey);
+        updateGroqStatus();
+      }
+      // Restore brand logo
+      if (payload.brandLogo) {
+        localStorage.setItem('nexus-logo', payload.brandLogo);
+        loadStoredLogo();
+      }
       closeModal();
       render();
-      toast('Config imported successfully');
-    } catch { toast('Invalid JSON file'); }
+      toast(`Suite restored — ${apps.length} apps loaded`, 3000);
+    } catch(err) {
+      toast(`Import failed: ${err.message}`);
+    }
   };
   reader.readAsText(e.target.files[0]);
 }
+
+// ── KEYS ONLY EXPORT — name + url + key for every app ──
+function exportKeys() {
+  const payload = {
+    _nexus: 'keys-only',
+    _version: '2.0',
+    _exported: new Date().toISOString(),
+    groqKey: getGroqKey() || '',
+    keys: apps.map(app => ({
+      id:   app.id,
+      name: app.name,
+      url:  app.url,
+      key:  app.key || '',
+    }))
+  };
+  dl(payload, `nexus_keys_${datestamp()}.json`);
+  const keyCount = apps.filter(a => a.key).length;
+  toast(`Keys exported — ${keyCount} of ${apps.length} apps have keys`);
+}
+
+function importKeys(e) {
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const payload = JSON.parse(ev.target.result);
+      if (!payload.keys) throw new Error('Not a NEXUS keys file');
+
+      let updated = 0;
+      payload.keys.forEach(k => {
+        // Match by id first, then by url, then by name
+        const app = apps.find(a => a.id === k.id)
+                 || apps.find(a => a.url === k.url)
+                 || apps.find(a => a.name.toLowerCase() === k.name?.toLowerCase());
+        if (app && k.key) {
+          app.key = k.key;
+          updated++;
+        }
+      });
+      // Restore Groq key if present
+      if (payload.groqKey) {
+        localStorage.setItem('nexus-groq-key', payload.groqKey);
+        updateGroqStatus();
+      }
+      save();
+      render();
+      toast(`${updated} app key${updated !== 1 ? 's' : ''} updated`);
+    } catch(err) {
+      toast(`Import failed: ${err.message}`);
+    }
+  };
+  reader.readAsText(e.target.files[0]);
+}
+
+// ── APPS CONFIG EXPORT — no icons, safe to share ──
+function exportApps() {
+  const payload = {
+    _nexus: 'apps-config',
+    _version: '2.0',
+    _exported: new Date().toISOString(),
+    apps: apps.map(app => ({
+      id:          app.id,
+      name:        app.name,
+      tag:         app.tag,
+      desc:        app.desc,
+      url:         app.url,
+      key:         app.key || '',
+      userSetName: app.userSetName || false,
+      userSetDesc: app.userSetDesc || false,
+      userSetTag:  app.userSetTag  || false,
+      // meta included but no userIcon (no base64 blobs)
+      meta: app.meta ? {
+        title:      app.meta.title,
+        desc:       app.meta.desc,
+        tag:        app.meta.tag,
+        themeColor: app.meta.themeColor,
+        favicon:    app.meta.favicon,
+        scrapedAt:  app.meta.scrapedAt,
+        aiEnriched: app.meta.aiEnriched,
+        // ogImage excluded — often large or CDN-hosted
+      } : null,
+    }))
+  };
+  dl(payload, `nexus_apps_${datestamp()}.json`);
+  toast(`Apps config exported — ${apps.length} apps (no icons)`);
+}
+
+function importApps(e) {
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const payload = JSON.parse(ev.target.result);
+      // Accept both apps-config format and legacy plain arrays
+      const incoming = payload.apps || (Array.isArray(payload) ? payload : null);
+      if (!incoming) throw new Error('Not a valid NEXUS apps file');
+
+      // Merge strategy: update existing by id, append new ones
+      let added = 0, updated = 0;
+      incoming.forEach(incoming => {
+        const existing = apps.find(a => a.id === incoming.id);
+        if (existing) {
+          // Preserve userIcon if not in incoming
+          Object.assign(existing, incoming);
+          if (!incoming.userIcon && existing.userIcon) { /* keep */ }
+          updated++;
+        } else {
+          apps.push(incoming);
+          added++;
+        }
+      });
+      save();
+      render();
+      toast(`Apps imported — ${updated} updated, ${added} added`, 3000);
+    } catch(err) {
+      toast(`Import failed: ${err.message}`);
+    }
+  };
+  reader.readAsText(e.target.files[0]);
+}
+
+// Keep exportJSON as alias for backwards compat with any old saved files
+function exportJSON() { exportApps(); }
+function importJSON(e) { importApps(e); }
 
 // ── INIT ──
 loadStoredLogo();
