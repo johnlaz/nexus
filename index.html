@@ -1298,8 +1298,8 @@ main {
           </label>
         </div>
 
-        <!-- Hidden iframe for silent data capture -->
-        <iframe id="capture-iframe" style="display:none;" sandbox="allow-scripts allow-same-origin"></iframe>
+        <!-- Hidden iframe for silent data capture — NO sandbox so postMessage works -->
+        <iframe id="capture-iframe" style="position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;border:none;" aria-hidden="true"></iframe>
 
         <div style="height:1px;background:var(--border);margin-bottom:20px;"></div>
 
@@ -3218,43 +3218,57 @@ async function captureApp(app) {
     renderMasterGrid();
 
     const iframe = document.getElementById('capture-iframe');
-    const timeout = setTimeout(() => {
-      // Timed out — mark as failed (no listener)
-      masterData[app.id].failed = true;
+    let settled = false;
+
+    const finish = (ok) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeout);
+      window.removeEventListener('message', handler);
+      if (!ok) masterData[app.id].failed = true;
       renderMasterGrid();
-      resolve(false);
-    }, 8000);
+      resolve(ok);
+    };
+
+    const timeout = setTimeout(() => finish(false), 10000);
 
     const handler = (e) => {
       if (e.data?.type === 'NEXUS_EXPORT_RESPONSE' && e.data?.appId === app.id) {
-        clearTimeout(timeout);
-        window.removeEventListener('message', handler);
         masterData[app.id] = {
           captured: true,
           failed: false,
           localStorage: e.data.data || {},
           capturedAt: new Date().toISOString()
         };
-        renderMasterGrid();
-        resolve(true);
+        finish(true);
       }
     };
     window.addEventListener('message', handler);
 
-    // Load iframe and fire request after load
     iframe.onload = () => {
+      // Guard: ignore about:blank load events
+      try {
+        const href = iframe.contentWindow?.location?.href || '';
+        if (!href || href === 'about:blank') return;
+      } catch(e) {
+        // cross-origin check throws — that means a real page loaded, continue
+      }
+
+      // Give the page's scripts time to execute (listener attaches on DOMContentLoaded)
       setTimeout(() => {
+        if (settled) return;
         try {
-          iframe.contentWindow.postMessage({ type: 'NEXUS_EXPORT_REQUEST', appId: app.id }, '*');
-        } catch(e) {
-          clearTimeout(timeout);
-          window.removeEventListener('message', handler);
-          masterData[app.id].failed = true;
-          renderMasterGrid();
-          resolve(false);
+          iframe.contentWindow.postMessage({
+            type:  'NEXUS_EXPORT_REQUEST',
+            appId: app.id
+          }, '*');
+        } catch(err) {
+          console.warn('[Nexus capture] postMessage failed for', app.name, err);
+          finish(false);
         }
-      }, 1500);
+      }, 2000);
     };
+
     iframe.src = app.url;
   });
 }
