@@ -88,13 +88,17 @@
           const k = localStorage.key(i);
           snapshot[k] = localStorage.getItem(k);
         }
-        // Reply to Nexus with the full snapshot
-        event.source.postMessage({
-          type:   'NEXUS_EXPORT_RESPONSE',
-          appId:  appId,
-          data:   snapshot
-        }, '*');
-        console.log(`[NEXUS] Export response sent — ${Object.keys(snapshot).length} keys`);
+        // Use window.parent (always available) instead of event.source
+        // which can be null for hidden/offscreen iframes in some browsers
+        const target = window.parent !== window ? window.parent : event.source;
+        if (target) {
+          target.postMessage({
+            type:  'NEXUS_EXPORT_RESPONSE',
+            appId: appId,
+            data:  snapshot
+          }, '*');
+          console.log(`[NEXUS] Export response sent — ${Object.keys(snapshot).length} keys`);
+        }
       } catch (e) {
         console.warn('[NEXUS] Export response failed:', e);
       }

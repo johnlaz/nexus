@@ -1270,24 +1270,44 @@ main {
       <!-- IO TAB -->
       <div id="tab-io" style="display:none;">
 
-        <!-- ── MASTER RESTORE (new top section) ── -->
+        <!-- ── MASTER RESTORE (push-based) ── -->
         <div style="margin-bottom:20px;padding:16px;background:linear-gradient(135deg,rgba(0,212,255,0.05),rgba(139,92,246,0.03));border:1px solid rgba(0,212,255,0.15);border-radius:8px;">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
             <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;">⚡ Master Restore</div>
-            <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--dim);letter-spacing:1px;" id="master-status">Ready</div>
+            <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--dim);letter-spacing:1px;" id="master-status">
+              <span id="master-captured-count">0</span>/<span id="master-total-count">0</span> captured
+            </div>
           </div>
-          <div style="font-size:11px;color:var(--dim);line-height:1.6;margin-bottom:14px;">
-            Captures every app's full localStorage data — settings, API keys, configs — into one file. Import it back and all apps restore instantly on launch. Requires the listener snippet in each app.
+          <div style="font-size:11px;color:var(--dim);line-height:1.7;margin-bottom:14px;">
+            <strong style="color:var(--white);">How it works:</strong> Launch each app via the sidebar — when the app loads it automatically sends its data to Nexus. Once all apps are captured, download the master file. On any new device, import it and all app data restores on launch.
           </div>
 
-          <!-- Per-app capture status grid -->
+          <!-- Step indicator -->
+          <div style="display:flex;gap:8px;margin-bottom:14px;">
+            <div style="flex:1;padding:8px;background:var(--surface2);border-radius:6px;border:1px solid var(--border);text-align:center;">
+              <div style="font-family:'DM Mono',monospace;font-size:18px;font-weight:500;color:var(--gold);">1</div>
+              <div style="font-size:10px;color:var(--dim);margin-top:2px;">Launch each app<br>from sidebar</div>
+            </div>
+            <div style="display:flex;align-items:center;color:var(--dim2);font-size:18px;">→</div>
+            <div style="flex:1;padding:8px;background:var(--surface2);border-radius:6px;border:1px solid var(--border);text-align:center;">
+              <div style="font-family:'DM Mono',monospace;font-size:18px;font-weight:500;color:var(--gold);">2</div>
+              <div style="font-size:10px;color:var(--dim);margin-top:2px;">Data auto-captured<br>when it loads</div>
+            </div>
+            <div style="display:flex;align-items:center;color:var(--dim2);font-size:18px;">→</div>
+            <div style="flex:1;padding:8px;background:var(--surface2);border-radius:6px;border:1px solid var(--border);text-align:center;">
+              <div style="font-family:'DM Mono',monospace;font-size:18px;font-weight:500;color:var(--gold);">3</div>
+              <div style="font-size:10px;color:var(--dim);margin-top:2px;">Download master<br>JSON when done</div>
+            </div>
+          </div>
+
+          <!-- Per-app status grid -->
           <div id="master-app-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px;"></div>
 
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-            <button class="io-btn io-btn-primary" onclick="startMasterCapture()" id="master-capture-btn" style="font-size:10px;padding:11px;">
-              ⚡ Capture All Apps
+            <button class="io-btn io-btn-ghost" onclick="clearMasterData()" style="font-size:10px;padding:11px;">
+              ↺ Reset Captures
             </button>
-            <button class="io-btn io-btn-ghost" onclick="exportMaster()" id="master-export-btn" style="font-size:10px;padding:11px;opacity:0.4;" disabled>
+            <button class="io-btn io-btn-primary" onclick="exportMaster()" id="master-export-btn" style="font-size:10px;padding:11px;opacity:0.4;" disabled>
               ↓ Download Master JSON
             </button>
           </div>
@@ -1297,9 +1317,6 @@ main {
             <input type="file" accept=".json" style="display:none" onchange="importMaster(event)">
           </label>
         </div>
-
-        <!-- Hidden iframe for silent data capture — NO sandbox so postMessage works -->
-        <iframe id="capture-iframe" style="position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;border:none;" aria-hidden="true"></iframe>
 
         <div style="height:1px;background:var(--border);margin-bottom:20px;"></div>
 
@@ -2173,35 +2190,35 @@ function launch(app) {
   const frame = document.getElementById('app-frame');
   frame.src = app.url;
 
-  // Inject API key into iframe via postMessage once it loads
-  if (app.key) {
-    const injectKey = () => {
-      try {
-        frame.contentWindow.postMessage({
-          type: 'NEXUS_KEY_INJECT',
-          key: app.key,
-          appId: app.id,
-          appName: app.name
-        }, '*');
-      } catch(e) {}
-    };
-    frame.onload = injectKey;
-    // Also try after a short delay for SPAs that delay rendering
-    frame.onload = () => {
+  // On load: inject key + stored master data + request fresh capture
+  frame.onload = () => {
+    // 1. Inject API key if set
+    if (app.key) {
+      const injectKey = () => {
+        try {
+          frame.contentWindow.postMessage({
+            type: 'NEXUS_KEY_INJECT',
+            key: app.key,
+            appId: app.id,
+            appName: app.name
+          }, '*');
+        } catch(e) {}
+      };
       injectKey();
       setTimeout(injectKey, 1500);
-    };
-  } else {
-    frame.onload = null;
-  }
+    }
+
+    // 2. Inject stored master data if available (from imported master JSON)
+    setTimeout(_masterLaunchHook, 100);
+
+    // 3. Request fresh capture from app (auto-populates master grid)
+    setTimeout(requestDataFromActiveApp, 2000);
+  };
 
   document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
   const navEl = document.getElementById(`nav-${app.id}`);
   if (navEl) navEl.classList.add('active');
   closeMobileDrawer();
-
-  // Inject master restore data if available (from imported master JSON)
-  setTimeout(_masterLaunchHook, 50);
 }
 
 function showDashboard() {
@@ -2250,7 +2267,8 @@ function switchTab(e, tabId) {
   document.querySelectorAll('.modal-tab').forEach(b => b.classList.remove('active'));
   document.getElementById(tabId).style.display = '';
   e.currentTarget.classList.add('active');
-  if (tabId === 'tab-notes') { initNotes(); }
+  if (tabId === 'tab-notes') initNotes();
+  if (tabId === 'tab-io')    renderMasterGrid();
 }
 
 function renderConfigRows() {
@@ -3180,179 +3198,98 @@ function importSuite(e) {
   reader.readAsText(e.target.files[0]);
 }
 
-// ── MASTER RESTORE SYSTEM ──
-let masterData = {};   // { appId: { localStorage: {...}, captured: bool, manual: bool } }
-let captureInProgress = false;
+// ── MASTER RESTORE SYSTEM (push-based) ──
+// Apps push their data to Nexus when launched — no hidden iframes needed.
+// GitHub Pages blocks X-Frame-Options so silent iframe capture doesn't work.
+// Instead: launch each app once via sidebar, data arrives automatically.
+
+let masterData = JSON.parse(localStorage.getItem('nexus-master-captures') || '{}');
+
+function saveMasterData() {
+  localStorage.setItem('nexus-master-captures', JSON.stringify(masterData));
+}
+
+function clearMasterData() {
+  if (!confirm('Clear all captured app data?')) return;
+  masterData = {};
+  saveMasterData();
+  renderMasterGrid();
+  const btn = document.getElementById('master-export-btn');
+  if (btn) { btn.disabled = true; btn.style.opacity = '0.4'; }
+  toast('Capture data cleared');
+}
 
 function renderMasterGrid() {
   const grid = document.getElementById('master-app-grid');
   if (!grid) return;
+
+  let captured = 0;
   grid.innerHTML = apps.map(app => {
     const state = masterData[app.id];
     let badge, badgeStyle;
-    if (!state) {
-      badge = '○ Pending'; badgeStyle = 'color:var(--dim);';
-    } else if (state.captured) {
+    if (state?.captured) {
       const keys = Object.keys(state.localStorage || {}).length;
       badge = `✓ ${keys} key${keys!==1?'s':''}`;
       badgeStyle = 'color:var(--green);';
-    } else if (state.failed) {
-      badge = '! No listener'; badgeStyle = 'color:var(--amber);';
+      captured++;
     } else {
-      badge = '⟳ Scanning…'; badgeStyle = 'color:var(--gold);';
+      badge = '○ Launch to capture';
+      badgeStyle = 'color:var(--dim);';
     }
     return `
-      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:8px 10px;display:flex;align-items:center;justify-content:space-between;gap:8px;">
-        <div style="font-size:11px;font-weight:500;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:90px;">${app.name}</div>
-        <div style="display:flex;align-items:center;gap:6px;">
-          <span style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:1px;${badgeStyle}">${badge}</span>
-          ${state?.failed ? `<button onclick="manualCapture('${app.id}')" title="Open app and manually capture" style="background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.3);color:var(--gold);font-size:9px;font-family:'DM Mono',monospace;padding:2px 7px;border-radius:4px;cursor:pointer;letter-spacing:1px;">Launch</button>` : ''}
-        </div>
+      <div style="background:var(--surface2);border:1px solid ${state?.captured ? 'rgba(61,186,122,0.25)' : 'var(--border)'};border-radius:6px;padding:8px 10px;display:flex;align-items:center;justify-content:space-between;gap:6px;">
+        <div style="font-size:11px;font-weight:500;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:85px;">${app.name}</div>
+        <span style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:1px;white-space:nowrap;${badgeStyle}">${badge}</span>
       </div>`;
   }).join('');
-}
 
-async function captureApp(app) {
-  return new Promise(resolve => {
-    masterData[app.id] = { captured: false, failed: false, localStorage: {} };
-    renderMasterGrid();
+  // Update counter
+  const cc = document.getElementById('master-captured-count');
+  const tc = document.getElementById('master-total-count');
+  if (cc) cc.textContent = captured;
+  if (tc) tc.textContent = apps.length;
 
-    const iframe = document.getElementById('capture-iframe');
-    let settled = false;
-
-    const finish = (ok) => {
-      if (settled) return;
-      settled = true;
-      clearTimeout(timeout);
-      window.removeEventListener('message', handler);
-      if (!ok) masterData[app.id].failed = true;
-      renderMasterGrid();
-      resolve(ok);
-    };
-
-    const timeout = setTimeout(() => finish(false), 10000);
-
-    const handler = (e) => {
-      if (e.data?.type === 'NEXUS_EXPORT_RESPONSE' && e.data?.appId === app.id) {
-        masterData[app.id] = {
-          captured: true,
-          failed: false,
-          localStorage: e.data.data || {},
-          capturedAt: new Date().toISOString()
-        };
-        finish(true);
-      }
-    };
-    window.addEventListener('message', handler);
-
-    iframe.onload = () => {
-      // Guard: ignore about:blank load events
-      try {
-        const href = iframe.contentWindow?.location?.href || '';
-        if (!href || href === 'about:blank') return;
-      } catch(e) {
-        // cross-origin check throws — that means a real page loaded, continue
-      }
-
-      // Give the page's scripts time to execute (listener attaches on DOMContentLoaded)
-      setTimeout(() => {
-        if (settled) return;
-        try {
-          iframe.contentWindow.postMessage({
-            type:  'NEXUS_EXPORT_REQUEST',
-            appId: app.id
-          }, '*');
-        } catch(err) {
-          console.warn('[Nexus capture] postMessage failed for', app.name, err);
-          finish(false);
-        }
-      }, 2000);
-    };
-
-    iframe.src = app.url;
-  });
-}
-
-async function startMasterCapture() {
-  if (captureInProgress) return;
-  captureInProgress = true;
-  masterData = {};
-
-  const btn = document.getElementById('master-capture-btn');
-  const statusEl = document.getElementById('master-status');
-  const exportBtn = document.getElementById('master-export-btn');
-  btn.textContent = '⟳ Capturing…';
-  btn.disabled = true;
-  exportBtn.disabled = true;
-  exportBtn.style.opacity = '0.4';
-
-  renderMasterGrid();
-
-  let captured = 0;
-  for (let i = 0; i < apps.length; i++) {
-    const app = apps[i];
-    if (!app.url?.startsWith('http')) continue;
-    statusEl.textContent = `${i+1}/${apps.length} — ${app.name}`;
-    const ok = await captureApp(app);
-    if (ok) captured++;
+  // Enable export once anything captured
+  const btn = document.getElementById('master-export-btn');
+  if (btn) {
+    btn.disabled = captured === 0;
+    btn.style.opacity = captured === 0 ? '0.4' : '1';
   }
-
-  // Clear iframe
-  const iframe = document.getElementById('capture-iframe');
-  iframe.src = 'about:blank';
-
-  captureInProgress = false;
-  btn.textContent = '⚡ Capture All Apps';
-  btn.disabled = false;
-  statusEl.textContent = `${captured}/${apps.length} captured`;
-
-  const anyCaptures = Object.values(masterData).some(d => d.captured);
-  if (anyCaptures) {
-    exportBtn.disabled = false;
-    exportBtn.style.opacity = '1';
-    toast(`Capture complete — ${captured} apps responded`, 3000);
-  } else {
-    toast('No apps responded — add the listener snippet to your apps first', 4000);
-  }
-  renderMasterGrid();
 }
 
-// Manual capture — opens app in main iframe and waits for user to trigger
-function manualCapture(appId) {
+// Listen for data pushed from apps (via the nexus-listener.js in each app)
+window.addEventListener('message', (e) => {
+  if (e.data?.type !== 'NEXUS_EXPORT_RESPONSE') return;
+  const { appId, data } = e.data;
+  if (!appId || !data) return;
+
   const app = apps.find(a => a.id === appId);
   if (!app) return;
 
-  toast(`Launching ${app.name} — the app will send its data to Nexus automatically on load`, 4000);
-
-  const handler = (e) => {
-    if (e.data?.type === 'NEXUS_EXPORT_RESPONSE' && e.data?.appId === appId) {
-      window.removeEventListener('message', handler);
-      masterData[appId] = {
-        captured: true, failed: false,
-        localStorage: e.data.data || {},
-        capturedAt: new Date().toISOString()
-      };
-      renderMasterGrid();
-      const anyCaptures = Object.values(masterData).some(d => d.captured);
-      const exportBtn = document.getElementById('master-export-btn');
-      if (anyCaptures && exportBtn) { exportBtn.disabled = false; exportBtn.style.opacity = '1'; }
-      toast(`✓ ${app.name} data captured`);
-    }
+  masterData[appId] = {
+    captured: true,
+    localStorage: data,
+    capturedAt: new Date().toISOString()
   };
-  window.addEventListener('message', handler);
-  launch(app);
-}
+  saveMasterData();
+  renderMasterGrid();
+
+  // Subtle toast only if tab is open
+  const ioTab = document.getElementById('tab-io');
+  if (ioTab && ioTab.style.display !== 'none') {
+    toast(`✓ ${app.name} data captured — ${Object.keys(data).length} keys`);
+  }
+});
 
 function exportMaster() {
   const captured = Object.entries(masterData).filter(([,v]) => v.captured);
-  if (!captured.length) { toast('Nothing captured yet'); return; }
+  if (!captured.length) { toast('Launch some apps first to capture their data'); return; }
 
   const payload = {
     _nexus:      'master-restore',
     _version:    VERSION,
     _exported:   new Date().toISOString(),
-    _info:       'Full master restore — contains Nexus config + per-app localStorage data',
-    // Nexus own config (same as Full Suite)
+    _info:       'Master restore — Nexus config + per-app localStorage snapshots',
     groqKey:     getGroqKey() || '',
     brandLogo:   localStorage.getItem('nexus-logo') || '',
     notes:       notes || '',
@@ -3366,14 +3303,13 @@ function exportMaster() {
       userSetTag:  app.userSetTag  || false,
       meta: app.meta || null,
     })),
-    // Per-app data blobs
     appData: Object.fromEntries(
       captured.map(([id, state]) => [id, {
-        appId:       id,
-        appName:     apps.find(a=>a.id===id)?.name || id,
-        appUrl:      apps.find(a=>a.id===id)?.url  || '',
+        appId:        id,
+        appName:      apps.find(a=>a.id===id)?.name || id,
+        appUrl:       apps.find(a=>a.id===id)?.url  || '',
         localStorage: state.localStorage,
-        capturedAt:  state.capturedAt
+        capturedAt:   state.capturedAt
       }])
     )
   };
@@ -3390,28 +3326,25 @@ function importMaster(e) {
       const payload = JSON.parse(ev.target.result);
       if (payload._nexus !== 'master-restore') throw new Error('Not a NEXUS master restore file');
 
-      // 1. Restore Nexus config
-      if (Array.isArray(payload.apps))          { apps = payload.apps; save(); }
-      if (payload.groqKey)                      { localStorage.setItem('nexus-groq-key', payload.groqKey); updateGroqStatus(); }
-      if (payload.brandLogo)                    { localStorage.setItem('nexus-logo', payload.brandLogo); loadStoredLogo(); }
-      if (payload.notes !== undefined)          { notes = payload.notes; saveNotes(); }
-      if (Array.isArray(payload.noteEntries))   { noteEntries = payload.noteEntries; saveNoteEntries(); }
+      if (Array.isArray(payload.apps))         { apps = payload.apps; save(); }
+      if (payload.groqKey)                     { localStorage.setItem('nexus-groq-key', payload.groqKey); updateGroqStatus(); }
+      if (payload.brandLogo)                   { localStorage.setItem('nexus-logo', payload.brandLogo); loadStoredLogo(); }
+      if (payload.notes !== undefined)         { notes = payload.notes; saveNotes(); }
+      if (Array.isArray(payload.noteEntries))  { noteEntries = payload.noteEntries; saveNoteEntries(); }
 
-      // 2. Store app data blobs — injected when each app launches
-      const appData = payload.appData || {};
-      localStorage.setItem('nexus-master-appdata', JSON.stringify(appData));
+      // Store app data blobs for injection on launch
+      localStorage.setItem('nexus-master-appdata', JSON.stringify(payload.appData || {}));
 
       closeModal();
       render();
-
-      const count = Object.keys(appData).length;
-      toast(`Master restored — ${apps.length} apps loaded, ${count} app data payloads queued for injection`, 4000);
+      const count = Object.keys(payload.appData || {}).length;
+      toast(`Master restored — ${apps.length} apps, ${count} app data payloads queued`, 4000);
     } catch(err) { toast(`Import failed: ${err.message}`); }
   };
   reader.readAsText(e.target.files[0]);
 }
 
-// Hook into launch() — inject stored app data on every app open
+// ── MASTER LAUNCH HOOK — injects stored app data when app loads ──
 const _masterLaunchHook = () => {
   const storedRaw = localStorage.getItem('nexus-master-appdata');
   if (!storedRaw || !activeApp) return;
@@ -3423,14 +3356,13 @@ const _masterLaunchHook = () => {
     const inject = () => {
       try {
         frame.contentWindow.postMessage({
-          type: 'NEXUS_DATA_INJECT',
-          appId: activeApp.id,
+          type:    'NEXUS_DATA_INJECT',
+          appId:   activeApp.id,
           appName: activeApp.name,
-          data: appPayload.localStorage
+          data:    appPayload.localStorage
         }, '*');
       } catch(e) {}
     };
-    // Fire on load + after delay for SPAs
     const origOnload = frame.onload;
     frame.onload = () => {
       if (origOnload) origOnload();
@@ -3440,25 +3372,28 @@ const _masterLaunchHook = () => {
   } catch(e) {}
 };
 
+// Also: when an app is launched in the MAIN iframe, ask it to send its data
+// This fires after the app loads so capture works without opening the IO tab
+function requestDataFromActiveApp() {
+  if (!activeApp) return;
+  const frame = document.getElementById('app-frame');
+  try {
+    frame.contentWindow.postMessage({
+      type:  'NEXUS_EXPORT_REQUEST',
+      appId: activeApp.id
+    }, '*');
+  } catch(e) {}
+}
+
 // ── INIT ──
 loadStoredLogo();
 updateGroqStatus();
 render();
-// Apply card glows after render
 setTimeout(() => apps.forEach(applyCardGlow), 100);
-// Init notes (render saved entries)
 initNotes();
-// Show version in dash eyebrow
+renderMasterGrid();
 const eyebrow = document.querySelector('.dash-eyebrow');
 if (eyebrow) eyebrow.textContent = `Portfolio v${VERSION}`;
-// Auto-render marketing card when IO tab opens
-document.querySelectorAll('.modal-tab').forEach(btn => {
-  btn.addEventListener('click', () => {
-    if (btn.textContent.includes('Export')) {
-      setTimeout(() => renderMarketingCard(), 100);
-    }
-  });
-});
 
 
 // ── SERVICE WORKER ──
