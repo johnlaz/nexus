@@ -1,5 +1,5 @@
 // NEXUS v2.0 — Service Worker
-const CACHE_NAME = 'nexus-v2.1';
+const CACHE_NAME = 'nexus-v2.0';
 const STATIC_ASSETS = [
   './index.html',
   './manifest.json',
@@ -13,10 +13,8 @@ const STATIC_ASSETS = [
 ];
 
 self.addEventListener('install', event => {
-  console.log('[Nexus SW] Installing v2.0...');
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(STATIC_ASSETS))
-      .then(() => self.skipWaiting())
+    caches.open(CACHE_NAME).then(c => c.addAll(STATIC_ASSETS)).then(() => self.skipWaiting())
   );
 });
 

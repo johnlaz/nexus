@@ -2,45 +2,48 @@
 
 > A dark-luxury editorial PWA dashboard for showcasing and demoing a personal app portfolio.
 
-## Overview
+## What's New in v2.0
 
-NEXUS is a unified control center for managing, monitoring, and launching a suite of independently hosted PWAs — built as a polished portfolio hub and live demo environment. Works on desktop, tablet, and mobile in both portrait and landscape.
+- **12 real apps pre-loaded** — APEX, ARMORY, AXIOM, INFUSE, LAZ LAB, Listener Pro, NEXUS, Odoo Email Link, TRSAV, UNPLUGGED, Story Magic, Kinetic Portfolio Terminal
+- **Theme color glow** — each app card glows with its own accent color pulled from meta
+- **Notes section** — capture ideas, bugs, future features; saved locally & in Full Suite export
+- **Marketing Card export** — one-click portfolio summary card, printable as PDF
+- **Mobile iframe fix** — bottom nav no longer overlaps launched app content
+- **Version label** — v2.0 displayed in dashboard header and wordmark
 
-## Features
+## All Features
 
-- **Custom Branded Icon** — NEXUS Suite icon across all platforms (favicon, home screen, splash)
-- **Mobile-First Responsive** — auto-follows device orientation, slide-in drawer, bottom nav bar
-- **Editorial Dark UI** — Playfair Display + DM Mono typography, gold accent palette, grain texture
-- **Auto Metadata Scraping** — paste a URL and cards self-populate via multi-proxy fallback chain
-- **Groq AI Enrichment** — reads full page content to generate name, tag, description
-- **App Icon Upload** — upload any image per app; shown large in card preview, retained in export
-- **Manual Override Protection** — user-typed fields never overwritten by scan or AI
-- **Live Status Monitoring** — real-time heartbeat pings with animated indicators
-- **Scan All Button** — one-click refresh all metadata with progress bar
-- **API Key Injection** — keys shown in iframe header + injected via postMessage on launch
-- **Export / Import** — JSON config retains icons, descriptions, keys, and all manual data
-- **Full PWA** — installable, offline-capable via Service Worker
+- Mobile-first responsive (slide-in drawer, bottom nav, portrait/landscape auto-orient)
+- Auto metadata scraping via multi-proxy fallback chain
+- Groq AI enrichment — fills name/tag/desc from page content
+- Icon upload per app (shown large in card preview, stored in export)
+- Manual override protection — user fields never overwritten by scan
+- Live status monitoring with animated indicators
+- Scan All button with gold progress bar
+- API key injection via postMessage on launch
+- Full Suite export/import (apps + icons + keys + notes + Groq key + logo)
+- Keys-only and Apps-only export tiers
 
-## Deployment (GitHub Pages)
+## Deployment
 
-1. Push all files to your GitHub repository root
-2. Go to **Settings → Pages → Deploy from branch → main / root**
+1. Push all files to GitHub repo root
+2. **Settings → Pages → Deploy from branch → main / root**
 3. Live at `https://johnlaz.github.io/nexus/`
 
 ## File Structure
 
 ```
 nexus/
-├── index.html               ← Main app shell
+├── index.html               ← Main app (all logic inline)
 ├── manifest.json            ← PWA manifest
-├── sw.js                    ← Service worker (cache-first, offline)
+├── sw.js                    ← Service worker
 ├── icons/
-│   ├── favicon.ico          ← Browser tab icon (multi-size)
+│   ├── favicon.ico
 │   ├── icon-16.png
 │   ├── icon-32.png
-│   ├── icon-192.png         ← Android home screen
-│   ├── icon-512.png         ← Splash screen / store
-│   └── apple-touch-icon.png ← iOS home screen (180px)
+│   ├── icon-192.png
+│   ├── icon-512.png
+│   └── apple-touch-icon.png
 └── README.md
 ```
 
@@ -48,15 +51,14 @@ nexus/
 
 | Version | Notes |
 |---------|-------|
-| v2.0 | NEXUS Suite branded icon (all sizes + favicon.ico + Apple touch), portrait/landscape auto-orientation, v2.0 label |
-| v1.6 | Auto device orientation — removed manifest landscape lock, portrait card layout, landscape 3-col grid |
-| v1.5 | Full mobile layout — slide-in drawer, bottom nav bar, responsive cards. Uploaded icon fills card preview. Tighter Groq prompt. |
-| v1.4 | Icon upload per app, export retains all data, manual overrides protected, API key injected on launch |
-| v1.3 | Groq AI enrichment, AI Settings tab, Scan All button with progress bar |
+| v2.0 | 12 real apps, theme color card glows, Notes tab, Marketing Card export, mobile iframe fix, version label |
+| v1.6 | Auto device orientation, portrait card layout, landscape 3-col grid |
+| v1.5 | Full mobile layout, slide-in drawer, bottom nav bar |
+| v1.4 | Icon upload, export retains all data, API key injection on launch |
+| v1.3 | Groq AI enrichment, AI Settings tab, Scan All button |
 | v1.2 | Multi-proxy scraper fallback chain |
 | v1.1 | Auto metadata scraping |
 | v1.0 | Initial release |
 
 ---
-
-Built with pure HTML5 · CSS3 · Vanilla JS · No build tools required
+Built with HTML5 · CSS3 · Vanilla JS · No build tools required
