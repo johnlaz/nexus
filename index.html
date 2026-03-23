@@ -1789,9 +1789,7 @@ function closeMobileDrawer() {
   document.getElementById('sidebar').classList.remove('drawer-open');
   document.getElementById('sidebar-overlay').classList.remove('open');
 }
-// Close drawer when an app is launched on mobile
-const _origLaunch = launch;
-// (patched below in launch itself)
+// Close drawer when an app is launched on mobile — handled inside launch()
 function getGroqKey() { return localStorage.getItem('nexus-groq-key') || ''; }
 function saveGroqKey(val) {
   localStorage.setItem('nexus-groq-key', val.trim());
@@ -2201,6 +2199,9 @@ function launch(app) {
   const navEl = document.getElementById(`nav-${app.id}`);
   if (navEl) navEl.classList.add('active');
   closeMobileDrawer();
+
+  // Inject master restore data if available (from imported master JSON)
+  setTimeout(_masterLaunchHook, 50);
 }
 
 function showDashboard() {
@@ -3424,13 +3425,6 @@ const _masterLaunchHook = () => {
     };
   } catch(e) {}
 };
-
-// Patch the launch function to also trigger data injection
-const _origLaunchForMaster = launch;
-function launch(app) {
-  _origLaunchForMaster(app);
-  setTimeout(_masterLaunchHook, 50);
-}
 
 // ── INIT ──
 loadStoredLogo();
