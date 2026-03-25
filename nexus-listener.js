@@ -88,17 +88,20 @@
           const k = localStorage.key(i);
           snapshot[k] = localStorage.getItem(k);
         }
-        // Use window.parent (always available) instead of event.source
-        // which can be null for hidden/offscreen iframes in some browsers
-        const target = window.parent !== window ? window.parent : event.source;
-        if (target) {
-          target.postMessage({
-            type:  'NEXUS_EXPORT_RESPONSE',
-            appId: appId,
-            data:  snapshot
-          }, '*');
-          console.log(`[NEXUS] Export response sent — ${Object.keys(snapshot).length} keys`);
+        const response = {
+          type:  'NEXUS_EXPORT_RESPONSE',
+          appId: appId,
+          data:  snapshot
+        };
+        // Send to parent frame (Nexus main window) — works when running in iframe
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage(response, '*');
         }
+        // Also send to event source as fallback
+        if (event.source && event.source !== window.parent) {
+          event.source.postMessage(response, '*');
+        }
+        console.log('[NEXUS] Export response sent —', Object.keys(snapshot).length, 'keys');
       } catch (e) {
         console.warn('[NEXUS] Export response failed:', e);
       }
