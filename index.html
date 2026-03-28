@@ -80,48 +80,46 @@ aside {
   z-index: 50;
   transition: width 0.28s cubic-bezier(0.23,1,0.32,1),
               min-width 0.28s cubic-bezier(0.23,1,0.32,1);
-  overflow: hidden;
 }
 
 /* Collapsed desktop sidebar — icon rail only */
 aside.collapsed {
   width: 52px;
   min-width: 52px;
+  overflow: hidden;
 }
-aside.collapsed .wordmark,
+aside.collapsed .wordmark-label,
+aside.collapsed .wordmark-title,
+aside.collapsed .wordmark-sub,
 aside.collapsed .sidebar-search,
 aside.collapsed .nav-section-label,
 aside.collapsed .nav-item-info,
 aside.collapsed .nav-item-status,
-aside.collapsed .sidebar-footer,
-aside.collapsed .settings-btn span { display: none; }
+aside.collapsed .sidebar-footer { display: none; }
 
 aside.collapsed .nav-item {
   justify-content: center;
   padding: 12px 0;
 }
-aside.collapsed .status-pip { margin: 0; }
 
-/* Collapse toggle button — desktop only */
+/* Collapse toggle — sits at bottom of sidebar footer area */
 .sidebar-toggle {
-  position: absolute;
-  top: 50%;
-  right: -13px;
-  transform: translateY(-50%);
-  width: 26px; height: 26px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 10px 0;
+  background: none;
+  border: none;
+  border-top: 1px solid var(--border);
   color: var(--dim);
-  font-size: 10px;
-  z-index: 60;
+  font-size: 13px;
+  cursor: pointer;
   transition: all 0.2s;
-  box-shadow: 2px 0 8px rgba(0,0,0,0.3);
+  letter-spacing: 2px;
+  flex-shrink: 0;
 }
-.sidebar-toggle:hover { border-color: var(--gold); color: var(--gold); background: var(--surface2); }
-aside.collapsed .sidebar-toggle { right: -13px; }
+.sidebar-toggle:hover { color: var(--gold); background: var(--surface2); }
 
 @media (max-width: 768px) {
   .sidebar-toggle { display: none; }
@@ -1121,8 +1119,6 @@ main {
 
   <!-- ── SIDEBAR ── -->
   <aside id="sidebar">
-    <!-- Desktop collapse toggle -->
-    <button class="sidebar-toggle" id="sidebar-toggle" onclick="toggleSidebar()" title="Collapse sidebar">‹</button>
     <div class="wordmark" onclick="showDashboard()">
       <div class="wordmark-label">App Portfolio</div>
       <div class="wordmark-title">NEXUS</div>
@@ -1143,6 +1139,7 @@ main {
     <div class="sidebar-footer">
       <button class="settings-btn" onclick="openModal()">⚙ &nbsp;Configure</button>
     </div>
+    <button class="sidebar-toggle" id="sidebar-toggle" onclick="toggleSidebar()">‹‹ &nbsp;Collapse</button>
   </aside>
 
   <!-- ── MAIN ── -->
@@ -1156,6 +1153,7 @@ main {
           <span class="dash-title">All Applications</span>
         </div>
         <div class="dash-header-right">
+          <button onclick="toggleSidebar()" id="dash-tray-btn" title="Toggle sidebar" style="background:none;border:1px solid var(--border);color:var(--dim);width:32px;height:32px;border-radius:6px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all 0.2s;flex-shrink:0;" onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--gold)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--dim)'">☰</button>
           <button class="scan-all-btn" id="scan-all-btn" onclick="scanAll()">
             <span id="scan-icon">⟳</span> Scan All
           </button>
@@ -1938,7 +1936,6 @@ function closeMobileDrawer() {
 function toggleSidebar() {
   const isMobile = window.innerWidth <= 768;
   if (isMobile) {
-    // Mobile: toggle drawer
     const sidebar = document.getElementById('sidebar');
     if (sidebar.classList.contains('drawer-open')) {
       closeMobileDrawer();
@@ -1948,12 +1945,10 @@ function toggleSidebar() {
     return;
   }
   // Desktop: collapse/expand
-  const sidebar  = document.getElementById('sidebar');
-  const toggle   = document.getElementById('sidebar-toggle');
-  const trayBtn  = document.getElementById('tray-btn');
+  const sidebar   = document.getElementById('sidebar');
+  const toggleBtn = document.getElementById('sidebar-toggle');
   const collapsed = sidebar.classList.toggle('collapsed');
-  if (toggle) toggle.textContent = collapsed ? '›' : '‹';
-  if (trayBtn) trayBtn.style.color = collapsed ? 'var(--gold)' : 'var(--dim)';
+  if (toggleBtn) toggleBtn.textContent = collapsed ? '›› Expand' : '‹‹ Collapse';
   localStorage.setItem('nexus-sidebar-collapsed', collapsed ? '1' : '0');
 }
 function getGroqKey() { return localStorage.getItem('nexus-groq-key') || ''; }
@@ -3518,12 +3513,10 @@ const eyebrow = document.querySelector('.dash-eyebrow');
 if (eyebrow) eyebrow.textContent = `Portfolio v${VERSION}`;
 // Restore sidebar collapsed state on desktop
 if (window.innerWidth > 768 && localStorage.getItem('nexus-sidebar-collapsed') === '1') {
-  const sidebar = document.getElementById('sidebar');
-  const toggle  = document.getElementById('sidebar-toggle');
-  const trayBtn = document.getElementById('tray-btn');
+  const sidebar   = document.getElementById('sidebar');
+  const toggleBtn = document.getElementById('sidebar-toggle');
   sidebar?.classList.add('collapsed');
-  if (toggle) toggle.textContent = '›';
-  if (trayBtn) trayBtn.style.color = 'var(--gold)';
+  if (toggleBtn) toggleBtn.textContent = '›› Expand';
 }
 
 
