@@ -1480,7 +1480,7 @@ main {
 <script>
 const VERSION = '2.5';
 // ── STATE ──
-let apps = JSON.parse(localStorage.getItem('nexus-apps') || 'null') || [
+const _preloadedApps = [
   {
     "id": "unplugged",
     "name": "APEX",
@@ -1856,6 +1856,23 @@ let apps = JSON.parse(localStorage.getItem('nexus-apps') || 'null') || [
     }
   }
 ];
+(function() {
+  const _cached = JSON.parse(localStorage.getItem('nexus-apps') || 'null');
+  if (!_cached) {
+    // First visit — use preloaded
+    var apps_init = _preloadedApps;
+  } else {
+    // Returning user — keep their data but add any new apps from preload
+    const existingIds = new Set(_cached.map(a => a.id));
+    const newApps = _preloadedApps.filter(a => !existingIds.has(a.id));
+    var apps_init = newApps.length > 0 ? [..._cached, ...newApps] : _cached;
+    if (newApps.length > 0) {
+      console.log('[Nexus] Added', newApps.length, 'new app(s):', newApps.map(a => a.name).join(', '));
+    }
+  }
+  window._nexusAppsInit = apps_init;
+})();
+let apps = window._nexusAppsInit;
 
 let notes = localStorage.getItem('nexus-notes') || '';
 let activeApp = null;
@@ -2395,9 +2412,12 @@ function setStatus(id, state) {
 }
 
 function updateLiveCount() {
-  const liveEls = document.querySelectorAll('.status-pip.pip-live');
-  const unique = new Set([...liveEls].map(el => el.id.replace('pip-','').replace('cardpip-','')));
-  document.getElementById('live-count').textContent = Math.ceil(unique.size / 2);
+  // Count unique app IDs that have a live sidebar pip — avoids double-counting card pips
+  const liveIds = new Set();
+  document.querySelectorAll('[id^="pip-"].pip-live').forEach(el => {
+    liveIds.add(el.id.replace('pip-',''));
+  });
+  document.getElementById('live-count').textContent = liveIds.size;
 }
 
 function updateCheckTime() {
