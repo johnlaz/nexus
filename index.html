@@ -2030,6 +2030,7 @@ function renderSidebar() {
       <span class="nav-item-status s-checking" id="navstat-${app.id}">…</span>
     `;
     el.onclick = () => launch(app);
+    el.draggable = true;
     list.appendChild(el);
   });
 }
@@ -3878,15 +3879,7 @@ function initSidebarDrag() {
   });
 }
 
-// Make sidebar items draggable in reorder mode
-const _origRenderSidebar = renderSidebar;
-function renderSidebar() {
-  _origRenderSidebar();
-  // Make each nav item draggable
-  document.querySelectorAll('.nav-item').forEach(el => {
-    el.draggable = true;
-  });
-}
+// Sidebar items made draggable inside renderSidebar directly
 
 // ── INIT ──
 loadStoredLogo();
