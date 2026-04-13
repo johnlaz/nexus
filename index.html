@@ -1221,7 +1221,7 @@ main {
     <div class="wordmark" onclick="showDashboard()">
       <div class="wordmark-label">App Portfolio</div>
       <div class="wordmark-title">NEXUS</div>
-      <div class="wordmark-sub">v3.0 — johnlaz.github.io</div>
+      <div class="wordmark-sub">v3.1 — johnlaz.github.io</div>
     </div>
 
     <div class="sidebar-search">
@@ -1438,45 +1438,63 @@ main {
       <!-- IO TAB -->
       <div id="tab-io" style="display:none;">
 
-        <!-- ── APP DATA VAULT ── -->
-        <div style="margin-bottom:20px;padding:16px;background:linear-gradient(135deg,rgba(0,212,255,0.05),rgba(139,92,246,0.03));border:1px solid rgba(0,212,255,0.15);border-radius:8px;">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-            <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;">⚡ App Data Vault</div>
-            <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--dim);letter-spacing:1px;">
-              <span id="vault-count">0</span>/<span id="vault-total">0</span> stored
+        <!-- ── FULL RESTORE (new top section) ── -->
+        <div style="margin-bottom:20px;padding:16px;background:linear-gradient(135deg,rgba(0,212,255,0.06),rgba(139,92,246,0.04));border:1px solid rgba(0,212,255,0.2);border-radius:8px;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+            <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;">⚡ Full Restore</div>
+            <div style="font-family:'DM Mono',monospace;font-size:8px;letter-spacing:1px;color:var(--surface);background:var(--amber);padding:2px 7px;border-radius:10px;text-transform:uppercase;">Personal Use Only</div>
+          </div>
+          <div style="font-size:11px;color:var(--white);line-height:1.7;margin-bottom:6px;font-weight:500;">
+            Complete snapshot of your entire Nexus — everything included.
+          </div>
+          <div style="font-size:10px;color:var(--dim);line-height:1.7;margin-bottom:10px;">
+            Includes: all apps · API keys · Groq key · icons · metadata · vault files · embedded local HTML files · notes · app order.
+          </div>
+          <!-- Warning banner -->
+          <div style="background:rgba(201,129,58,0.1);border:1px solid rgba(201,129,58,0.3);border-radius:6px;padding:9px 12px;margin-bottom:14px;display:flex;gap:8px;align-items:flex-start;">
+            <span style="font-size:14px;flex-shrink:0;">⚠</span>
+            <div style="font-size:10px;color:var(--amber);line-height:1.6;font-family:'DM Mono',monospace;letter-spacing:0.5px;">
+              This file contains your API keys and any embedded local HTML files. Keep it private — do not upload to GitHub or share publicly.
             </div>
           </div>
-          <div style="font-size:11px;color:var(--dim);line-height:1.7;margin-bottom:14px;">
-            Upload each app's exported JSON to store it here. Download individual app files anytime to load into that app manually. Export a master bundle containing all apps at once.
-          </div>
-
-          <!-- Per-app rows -->
-          <div id="vault-grid" style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px;"></div>
-
-          <!-- Master actions -->
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-            <button class="io-btn io-btn-ghost" onclick="vaultClearAll()" style="font-size:10px;padding:10px;">↺ Clear All</button>
-            <button class="io-btn io-btn-primary" onclick="vaultExportMaster()" id="vault-master-btn" style="font-size:10px;padding:10px;opacity:0.4;" disabled>↓ Master Bundle</button>
+            <button class="io-btn io-btn-primary" onclick="exportFullRestore()" style="font-size:10px;padding:11px;">↓ &nbsp;Export Full Restore</button>
+            <label class="io-btn io-btn-ghost" style="text-align:center;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:10px;padding:11px;">
+              ↑ &nbsp;Import Full Restore
+              <input type="file" accept=".json" style="display:none" onchange="importFullRestore(event)">
+            </label>
           </div>
-          <div style="height:1px;background:var(--border);margin:12px 0;"></div>
-          <label class="io-btn io-btn-ghost" style="display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:10px;padding:10px;">
-            ↑ &nbsp;Import Master Bundle
-            <input type="file" accept=".json" style="display:none" onchange="vaultImportMaster(event)">
-          </label>
         </div>
 
         <div style="height:1px;background:var(--border);margin-bottom:20px;"></div>
 
-        <!-- FULL SUITE (master) -->
-        <div style="margin-bottom:20px;">
-          <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;margin-bottom:10px;">Full Suite Backup</div>
+        <!-- ── APP DATA VAULT ── -->
+        <div style="margin-bottom:20px;padding:14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+            <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:3px;color:var(--dim);text-transform:uppercase;">App Data Vault</div>
+            <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--dim);letter-spacing:1px;">
+              <span id="vault-count">0</span>/<span id="vault-total">0</span> stored
+            </div>
+          </div>
           <div style="font-size:11px;color:var(--dim);line-height:1.6;margin-bottom:12px;">
-            Nexus config only — apps, keys, icons, descriptions, AI metadata, Groq key. Does not include individual app data.
+            Store each app's own JSON export here. Download individually to load into that app. Included automatically in Full Restore.
+          </div>
+          <div id="vault-grid" style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px;"></div>
+          <button class="io-btn io-btn-ghost" onclick="vaultClearAll()" style="font-size:10px;padding:9px;width:100%;">↺ Clear All Vault Data</button>
+        </div>
+
+        <div style="height:1px;background:var(--border);margin-bottom:20px;"></div>
+
+        <!-- FULL SUITE — safe to share -->
+        <div style="margin-bottom:20px;">
+          <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:3px;color:var(--dim);text-transform:uppercase;margin-bottom:10px;">Full Suite — Safe to Share</div>
+          <div style="font-size:11px;color:var(--dim);line-height:1.6;margin-bottom:12px;">
+            Apps, icons, descriptions, AI metadata, Groq key. No vault files, no local HTML. Safe to upload to GitHub or share.
           </div>
           <div class="io-grid">
-            <button class="io-btn io-btn-primary" onclick="exportSuite()">↓ &nbsp;Export Full Suite</button>
+            <button class="io-btn io-btn-ghost" onclick="exportSuite()">↓ &nbsp;Export Suite</button>
             <label class="io-btn io-btn-ghost" style="text-align:center;display:flex;align-items:center;justify-content:center;cursor:pointer;">
-              ↑ &nbsp;Import Full Suite
+              ↑ &nbsp;Import Suite
               <input type="file" accept=".json" style="display:none" onchange="importSuite(event)">
             </label>
           </div>
@@ -1538,7 +1556,7 @@ main {
 <div class="toast" id="toast"></div>
 
 <script>
-const VERSION = '3.0';
+const VERSION = '3.1';
 // ── STATE ──
 let apps = JSON.parse(localStorage.getItem('nexus-apps') || 'null') || [
   {
@@ -2116,7 +2134,7 @@ function renderGrid() {
         <div class="card-name">${displayName}</div>
         <div class="card-desc">${displayDesc}</div>
         <div class="card-footer">
-          <span class="card-url-display">${shortUrl}</span>
+          <span class="card-url-display">${vault[app.id]?.htmlFile ? '<span style="color:var(--green);font-size:8px;letter-spacing:1px;margin-right:4px;">● LOCAL</span>' : ''}${shortUrl}</span>
           <button class="card-launch-btn" onclick="event.stopPropagation(); launch(apps.find(a=>a.id==='${app.id}'))">Launch →</button>
         </div>
       </div>
@@ -2499,6 +2517,18 @@ function updateStats() {
 
 // ── STATUS ──
 async function checkStatus(app) {
+  // Skip network check for locally-embedded apps with no live URL
+  if (vault[app.id]?.htmlFile && (!app.url || app.url === 'https://')) {
+    const pip  = document.getElementById(`pip-${app.id}`);
+    const stat = document.getElementById(`navstat-${app.id}`);
+    const cpip = document.getElementById(`cardpip-${app.id}`);
+    const cstat= document.getElementById(`cardstat-${app.id}`);
+    if (pip)   pip.className   = 'status-pip pip-live';
+    if (stat)  { stat.textContent = 'LOCAL'; stat.className = 'nav-item-status s-live'; }
+    if (cpip)  cpip.className  = 'status-pip pip-live';
+    if (cstat) { cstat.textContent = 'LOCAL'; cstat.className = 's-live'; }
+    return;
+  }
   try {
     await fetch(app.url, { mode: 'no-cors', signal: AbortSignal.timeout(5000) });
     setStatus(app.id, 'live');
@@ -2566,10 +2596,22 @@ function launch(app) {
     keyArea.style.display = 'none';
   }
 
-  // Load iframe
+  // Load iframe — use srcdoc for locally embedded HTML files
   const frame = document.getElementById('app-frame');
   frame.onload = null;
-  frame.src = app.url;
+
+  const localEntry = vault[app.id];
+  if (localEntry?.htmlFile) {
+    // Embedded local HTML — load via srcdoc (no server needed)
+    frame.removeAttribute('src');
+    frame.srcdoc = localEntry.htmlFile;
+    // Show local badge in header
+    const urlEl = document.getElementById('iframe-app-url');
+    if (urlEl) urlEl.textContent = `📄 ${localEntry.htmlFilename || 'local file'}`;
+  } else {
+    frame.removeAttribute('srcdoc');
+    frame.src = app.url;
+  }
 
   document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
   const navEl = document.getElementById(`nav-${app.id}`);
@@ -2683,8 +2725,28 @@ function renderConfigRows() {
         </div>
       </div>
       <div class="config-inputs">
-        <input class="config-input full" placeholder="URL — paste to auto-scan" value="${escHtml(app.url)}"
-          oninput="updateApp('${app.id}','url',this.value)">
+        <div style="display:flex;gap:6px;align-items:center;">
+          <input class="config-input full" placeholder="URL — or upload local HTML below" value="${escHtml(app.url)}"
+            oninput="updateApp('${app.id}','url',this.value)" style="flex:1;">
+          <label title="Upload local HTML file" style="
+            flex-shrink:0;cursor:pointer;padding:7px 11px;
+            background:${vault[app.id]?.htmlFile ? 'rgba(61,186,122,0.12)' : 'rgba(0,212,255,0.07)'};
+            border:1px solid ${vault[app.id]?.htmlFile ? 'rgba(61,186,122,0.4)' : 'rgba(0,212,255,0.2)'};
+            border-radius:6px;font-family:'DM Mono',monospace;font-size:9px;
+            letter-spacing:1px;color:${vault[app.id]?.htmlFile ? 'var(--green)' : 'var(--gold)'};
+            transition:all 0.2s;white-space:nowrap;"
+            onmouseover="this.style.background='rgba(0,212,255,0.14)'"
+            onmouseout="this.style.background='${vault[app.id]?.htmlFile ? "rgba(61,186,122,0.12)" : "rgba(0,212,255,0.07)"}'">
+            ${vault[app.id]?.htmlFile ? '✓ Local HTML' : '↑ HTML File'}
+            <input type="file" accept=".html,.htm" style="display:none"
+              onchange="uploadLocalHTML('${app.id}', event)">
+          </label>
+          ${vault[app.id]?.htmlFile ? `<button onclick="clearLocalHTML('${app.id}')" title="Remove local file"
+            style="flex-shrink:0;background:none;border:1px solid var(--border);color:var(--dim);
+            padding:7px 9px;border-radius:6px;cursor:pointer;font-size:12px;transition:all 0.2s;"
+            onmouseover="this.style.color='var(--red)'"
+            onmouseout="this.style.color='var(--dim)'">✕</button>` : ''}
+        </div>
         <input class="config-input full" placeholder="API Key / License (optional — auto-injected on launch)" value="${escHtml(app.key||'')}"
           oninput="updateApp('${app.id}','key',this.value)">
         <textarea class="config-input-desc" placeholder="Description (manual input overrides scan)"
@@ -2831,7 +2893,7 @@ function resetLogo() {
   document.querySelector('.wordmark').innerHTML = `
     <div class="wordmark-label">App Portfolio</div>
     <div class="wordmark-title">NEXUS</div>
-    <div class="wordmark-sub">v3.0 — johnlaz.github.io</div>
+    <div class="wordmark-sub">v3.1 — johnlaz.github.io</div>
   `;
   document.querySelector('.wordmark').onclick = showDashboard;
 }
@@ -3560,6 +3622,38 @@ function importSuite(e) {
   reader.readAsText(e.target.files[0]);
 }
 
+
+// ── LOCAL HTML FILE EMBEDDING ──
+function uploadLocalHTML(appId, event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const app = apps.find(a => a.id === appId);
+  const reader = new FileReader();
+  reader.onload = ev => {
+    // Store HTML content in vault under a special htmlFile key
+    if (!vault[appId]) vault[appId] = { name: app?.name || appId, url: app?.url || '', raw: {} };
+    vault[appId].htmlFile     = ev.target.result;  // full HTML string
+    vault[appId].htmlFilename = file.name;
+    vault[appId].htmlStoredAt = new Date().toISOString();
+    saveVault();
+    renderConfigRows();
+    toast(`✓ ${file.name} embedded — ${Math.round(file.size/1024)}KB`);
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+function clearLocalHTML(appId) {
+  if (vault[appId]) {
+    delete vault[appId].htmlFile;
+    delete vault[appId].htmlFilename;
+    delete vault[appId].htmlStoredAt;
+    saveVault();
+  }
+  renderConfigRows();
+  toast('Local HTML removed');
+}
+
 // ── APP DATA VAULT ──
 // Simple file storage. Upload each app's JSON → stored in Nexus.
 // Download any single app's file or the full master bundle on demand.
@@ -3678,60 +3772,114 @@ function vaultClearAll() {
 }
 
 function vaultExportMaster() {
-  const entries = Object.values(vault).filter(e => e.raw);
-  if (!entries.length) { toast('Upload at least one app file first'); return; }
+  // Legacy — redirect to full restore
+  exportFullRestore();
+}
+
+// ── FULL RESTORE EXPORT — everything, personal use only ──
+function exportFullRestore() {
+  // Count what we have
+  const localHtmlApps = Object.values(vault).filter(v => v.htmlFile).length;
+  const vaultApps     = Object.values(vault).filter(v => v.raw).length;
+  const keyedApps     = apps.filter(a => a.key).length;
 
   const bundle = {
-    _nexus:    'app-data-vault',
-    _version:  VERSION,
-    _exported: new Date().toISOString(),
-    _count:    entries.length,
-    // Nexus config
+    _nexus:     'full-restore',
+    _version:   VERSION,
+    _exported:  new Date().toISOString(),
+    _warning:   'PRIVATE — contains API keys and embedded HTML files. Do not share publicly.',
+    // ── Nexus config ──
     groqKey:     getGroqKey() || '',
     brandLogo:   localStorage.getItem('nexus-logo') || '',
     notes:       notes || '',
     noteEntries: noteEntries || [],
+    // ── All apps — full data including keys, icons, meta, order ──
     apps: apps.map(a => ({
-      id: a.id, name: a.name, tag: a.tag, desc: a.desc, url: a.url,
-      key: a.key || '', userIcon: a.userIcon || null,
-      userSetName: a.userSetName||false, userSetDesc: a.userSetDesc||false,
-      userSetTag: a.userSetTag||false, meta: a.meta||null
+      id:          a.id,
+      name:        a.name,
+      tag:         a.tag,
+      desc:        a.desc,
+      url:         a.url,
+      key:         a.key || '',
+      userIcon:    a.userIcon || null,
+      userSetName: a.userSetName || false,
+      userSetDesc: a.userSetDesc || false,
+      userSetTag:  a.userSetTag  || false,
+      meta:        a.meta || null,
     })),
-    // Per-app raw data blobs — exactly as uploaded
-    appFiles: Object.fromEntries(
-      Object.entries(vault)
-        .filter(([,v]) => v.raw)
-        .map(([id, v]) => [id, { name: v.name, url: v.url, filename: v.filename, storedAt: v.storedAt, data: v.raw }])
-    )
+    // ── Vault: per-app JSON files uploaded by user ──
+    vault: Object.fromEntries(
+      Object.entries(vault).map(([id, v]) => [id, {
+        name:         v.name,
+        url:          v.url,
+        filename:     v.filename     || null,
+        storedAt:     v.storedAt     || null,
+        raw:          v.raw          || null,   // app's own JSON data
+        htmlFile:     v.htmlFile     || null,   // embedded local HTML
+        htmlFilename: v.htmlFilename || null,
+        htmlStoredAt: v.htmlStoredAt || null,
+      }])
+    ),
   };
 
-  dl(bundle, `nexus_master_${datestamp()}.json`);
+  dl(bundle, `nexus_full_restore_${datestamp()}.json`);
   const kb = Math.round(JSON.stringify(bundle).length / 1024);
-  toast(`Master bundle downloaded — ${entries.length} apps, ~${kb}KB`);
+  const parts = [];
+  parts.push(`${apps.length} apps`);
+  if (keyedApps)     parts.push(`${keyedApps} keys`);
+  if (vaultApps)     parts.push(`${vaultApps} vault files`);
+  if (localHtmlApps) parts.push(`${localHtmlApps} local HTML`);
+  toast(`Full Restore exported — ${parts.join(' · ')} · ~${kb}KB`, 4000);
 }
 
-function vaultImportMaster(e) {
+// ── FULL RESTORE IMPORT — one file restores everything ──
+function importFullRestore(e) {
   const reader = new FileReader();
   reader.onload = ev => {
     try {
       const bundle = JSON.parse(ev.target.result);
-      if (bundle._nexus !== 'app-data-vault') throw new Error('Not a NEXUS master bundle');
+      if (bundle._nexus !== 'full-restore') throw new Error('Not a NEXUS Full Restore file');
 
-      // Restore Nexus config
-      if (Array.isArray(bundle.apps))          { apps = bundle.apps; saveImmediate(); }
-      if (bundle.groqKey)                      { localStorage.setItem('nexus-groq-key', bundle.groqKey); updateGroqStatus(); }
-      if (bundle.brandLogo)                    { localStorage.setItem('nexus-logo', bundle.brandLogo); loadStoredLogo(); }
-      if (bundle.notes !== undefined)          { notes = bundle.notes; saveNotes(); }
-      if (Array.isArray(bundle.noteEntries))   { noteEntries = bundle.noteEntries; saveNoteEntries(); }
+      // Restore apps (preserves order)
+      if (Array.isArray(bundle.apps)) {
+        apps = bundle.apps;
+        saveImmediate();
+      }
+      // Restore Groq key
+      if (bundle.groqKey) {
+        localStorage.setItem('nexus-groq-key', bundle.groqKey);
+        updateGroqStatus();
+      }
+      // Restore brand logo
+      if (bundle.brandLogo) {
+        localStorage.setItem('nexus-logo', bundle.brandLogo);
+        loadStoredLogo();
+      }
+      // Restore notes
+      if (bundle.notes !== undefined)         { notes = bundle.notes; saveNotes(); }
+      if (Array.isArray(bundle.noteEntries))  { noteEntries = bundle.noteEntries; saveNoteEntries(); }
 
-      // Restore vault entries
-      if (bundle.appFiles) {
-        Object.entries(bundle.appFiles).forEach(([id, entry]) => {
+      // Restore vault (JSON files + local HTML)
+      if (bundle.vault) {
+        Object.entries(bundle.vault).forEach(([id, entry]) => {
           vault[id] = {
-            name: entry.name, url: entry.url,
-            raw: entry.data, filename: entry.filename,
-            storedAt: entry.storedAt
+            name:         entry.name         || '',
+            url:          entry.url          || '',
+            filename:     entry.filename     || null,
+            storedAt:     entry.storedAt     || null,
+            raw:          entry.raw          || null,
+            htmlFile:     entry.htmlFile     || null,
+            htmlFilename: entry.htmlFilename || null,
+            htmlStoredAt: entry.htmlStoredAt || null,
           };
+        });
+        saveVault();
+      }
+      // Also handle legacy 'appFiles' format from old master bundle
+      if (bundle.appFiles && !bundle.vault) {
+        Object.entries(bundle.appFiles).forEach(([id, entry]) => {
+          vault[id] = { name: entry.name, url: entry.url, raw: entry.data,
+                        filename: entry.filename, storedAt: entry.storedAt };
         });
         saveVault();
       }
@@ -3739,13 +3887,24 @@ function vaultImportMaster(e) {
       closeModal();
       render();
       vaultRenderGrid();
-      const count = Object.keys(bundle.appFiles || {}).length;
-      toast(`Bundle imported — ${apps.length} apps, ${count} files restored`, 3000);
+
+      // Summary toast
+      const localHtmlCount = Object.values(vault).filter(v => v.htmlFile).length;
+      const vaultCount     = Object.values(vault).filter(v => v.raw).length;
+      const keyCount       = apps.filter(a => a.key).length;
+      const parts = [`${apps.length} apps restored`];
+      if (keyCount)       parts.push(`${keyCount} keys`);
+      if (vaultCount)     parts.push(`${vaultCount} vault files`);
+      if (localHtmlCount) parts.push(`${localHtmlCount} local HTML`);
+      toast(parts.join(' · '), 4000);
+
     } catch(err) { toast(`Import failed: ${err.message}`); }
   };
   reader.readAsText(e.target.files[0]);
 }
 
+// ── LEGACY vaultImportMaster — still accepts old format ──
+function vaultImportMaster(e) { importFullRestore(e); }
 
 // ── DRAG-TO-REORDER ──
 window._reorderActive = false;
