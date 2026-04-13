@@ -444,11 +444,14 @@ main {
 }
 
 /* ── APP CARDS ── */
+#cards-grid {
+  display: block;  /* outer container — holds group-sections */
+}
 .cards-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 20px;
-  margin-bottom: 60px;
+  margin-bottom: 0;
 }
 
 .app-card {
@@ -1288,7 +1291,8 @@ main {
 .pin-btn.pinned { color: var(--gold); background: rgba(0,212,255,0.15); border-color: rgba(0,212,255,0.3); display: flex; }
 
 /* ── APP GROUPS ── */
-.group-section { margin-bottom: 28px; }
+.group-section { margin-bottom: 32px; }
+.group-section:last-child { margin-bottom: 60px; }
 .group-header {
   display: flex; align-items: center; gap: 10px;
   margin-bottom: 14px; cursor: pointer;
@@ -1414,7 +1418,7 @@ main {
             ⠿ Reorder
           </button>
         </div>
-        <div class="cards-grid" id="cards-grid"></div>
+        <div id="cards-grid"></div>
       </div>
     </div>
 
@@ -4259,6 +4263,8 @@ function updateApp(id, field, value) {
   else if (field === 'key')   { app.key   = value; }
   else if (field === 'group') { app.group = value; }
   save();
+  // Re-render grid immediately when group changes so sections update live
+  if (field === 'group') { renderGrid(); }
 }
 
 // ── DRAG-TO-REORDER ──
