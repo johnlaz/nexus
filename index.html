@@ -169,7 +169,7 @@ aside.collapsed .nav-icon { display: flex; }
 .sidebar-toggle:hover { color: var(--gold); background: var(--surface2); }
 aside.collapsed .sidebar-toggle { font-size: 14px; letter-spacing: 0; }
 
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .sidebar-toggle { display: none; }
 }
 
@@ -648,7 +648,7 @@ main {
 .sidebar-overlay.open { display: block; }
 
 /* ── RESPONSIVE BREAKPOINTS ── */
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   :root { --sidebar-w: 100vw; --header-h: 56px; }
 
   .shell { flex-direction: column; height: 100dvh; }
@@ -714,7 +714,7 @@ main {
   .iframe-app-url { display: none; }
   /* Prevent iframe content hiding behind bottom nav */
   #app-frame { padding-bottom: 0; margin-bottom: 0; }
-  .iframe-wrapper { padding-bottom: 60px; }
+  .iframe-wrapper { padding-bottom: 64px; }
   /* Always show mobile nav even in iframe view */
   .mobile-nav { display: flex !important; }
 
@@ -730,8 +730,8 @@ main {
   }
   .modal-backdrop { align-items: flex-end; }
 
-  /* Show mobile nav */
-  .mobile-nav { display: flex; }
+  /* Show mobile nav on tablets and phones */
+  .mobile-nav { display: flex !important; }
 
   /* Hide desktop settings btn since it's in mobile nav */
   .sidebar-footer { display: none; }
@@ -1206,6 +1206,132 @@ main {
 }
 .reorder-banner.visible { display: block; }
 
+
+/* ── PINNED APPS STRIP ── */
+.pinned-strip {
+  display: none;
+  gap: 10px;
+  padding: 16px 24px 0;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.pinned-strip::-webkit-scrollbar { display: none; }
+.pinned-strip.has-pins { display: flex; }
+
+.pinned-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  flex-shrink: 0;
+  width: 72px;
+  transition: transform 0.18s;
+}
+.pinned-tile:hover { transform: translateY(-3px); }
+.pinned-tile-icon {
+  width: 52px; height: 52px;
+  border-radius: 14px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.4rem; font-weight: 900;
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  overflow: hidden;
+  position: relative;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.pinned-tile:hover .pinned-tile-icon {
+  border-color: var(--gold);
+  box-shadow: 0 0 16px rgba(0,212,255,0.2);
+}
+.pinned-tile-icon img { width: 100%; height: 100%; object-fit: cover; border-radius: 13px; }
+.pinned-tile-unpin {
+  position: absolute; top: -4px; right: -4px;
+  width: 16px; height: 16px;
+  background: var(--surface3);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  display: none;
+  align-items: center; justify-content: center;
+  font-size: 8px; color: var(--dim);
+  cursor: pointer; z-index: 5;
+  transition: all 0.15s;
+}
+.pinned-tile:hover .pinned-tile-unpin { display: flex; }
+.pinned-tile-unpin:hover { background: var(--red); color: #fff; border-color: var(--red); }
+.pinned-tile-name {
+  font-family: 'DM Mono', monospace;
+  font-size: 8px; letter-spacing: 0.5px;
+  color: var(--dim);
+  text-align: center;
+  max-width: 72px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  text-transform: uppercase;
+}
+.pin-btn {
+  position: absolute; bottom: 6px; right: 6px;
+  width: 22px; height: 22px;
+  background: rgba(0,0,0,0.5);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 5px;
+  display: none;
+  align-items: center; justify-content: center;
+  font-size: 11px; cursor: pointer;
+  z-index: 10; transition: all 0.15s;
+  color: var(--dim);
+}
+.app-card:hover .pin-btn { display: flex; }
+.pin-btn:hover { background: rgba(0,212,255,0.2); border-color: var(--gold); color: var(--gold); }
+.pin-btn.pinned { color: var(--gold); background: rgba(0,212,255,0.15); border-color: rgba(0,212,255,0.3); display: flex; }
+
+/* ── APP GROUPS ── */
+.group-section { margin-bottom: 28px; }
+.group-header {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 14px; cursor: pointer;
+  user-select: none;
+}
+.group-header:hover .group-chevron { color: var(--gold); }
+.group-chevron {
+  font-size: 10px; color: var(--dim);
+  transition: transform 0.2s, color 0.2s;
+  flex-shrink: 0;
+}
+.group-chevron.collapsed { transform: rotate(-90deg); }
+.group-name {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px; letter-spacing: 3px;
+  color: var(--dim); text-transform: uppercase;
+  flex-shrink: 0;
+}
+.group-rule { flex-grow: 1; height: 1px; background: var(--border); }
+.group-count {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px; color: var(--dim2);
+  letter-spacing: 1px; flex-shrink: 0;
+}
+.group-cards { }
+.group-cards.collapsed { display: none; }
+
+/* Group badge on config rows */
+.group-select {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--white);
+  font-family: 'DM Mono', monospace;
+  font-size: 10px; letter-spacing: 1px;
+  padding: 7px 10px;
+  border-radius: 6px;
+  width: 100%;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.group-select:focus { border-color: var(--gold); }
+
 </style>
 </head>
 <body>
@@ -1221,7 +1347,7 @@ main {
     <div class="wordmark" onclick="showDashboard()">
       <div class="wordmark-label">App Portfolio</div>
       <div class="wordmark-title">NEXUS</div>
-      <div class="wordmark-sub">v3.1 — johnlaz.github.io</div>
+      <div class="wordmark-sub">v3.2 — johnlaz.github.io</div>
     </div>
 
     <div class="sidebar-search">
@@ -1252,7 +1378,7 @@ main {
           <span class="dash-title">All Applications</span>
         </div>
         <div class="dash-header-right">
-          <button onclick="toggleSidebar()" id="dash-tray-btn" title="Toggle sidebar" style="background:none;border:1px solid var(--border);color:var(--dim);width:32px;height:32px;border-radius:6px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all 0.2s;flex-shrink:0;" onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--gold)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--dim)'">☰</button>
+          <button onclick="toggleSidebar()" id="dash-tray-btn" title="Toggle sidebar" style="background:none;border:1px solid var(--border);color:var(--dim);min-width:40px;height:40px;border-radius:6px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all 0.2s;flex-shrink:0;padding:0 10px;" onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--gold)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--dim)'">☰</button>
           <button class="scan-all-btn" id="scan-all-btn" onclick="scanAll()">
             <span id="scan-icon">⟳</span> Scan All
           </button>
@@ -1271,6 +1397,9 @@ main {
       </div>
 
       <div class="dash-body">
+        <!-- Pinned Apps Strip -->
+        <div class="pinned-strip" id="pinned-strip"></div>
+
         <div class="section-header">
           <span class="section-label">Registered Apps</span>
           <div class="section-rule"></div>
@@ -1306,12 +1435,13 @@ main {
         <div style="display:flex;gap:6px;flex-shrink:0;">
           <button onclick="toggleSidebar()" id="tray-btn" title="Toggle app tray" style="
             background:none;border:1px solid var(--border);color:var(--dim);
-            width:34px;height:34px;border-radius:6px;cursor:pointer;font-size:14px;
-            display:flex;align-items:center;justify-content:center;transition:all 0.2s;flex-shrink:0;">⊞</button>
-          <button onclick="openModal()" title="Settings" style="
-            background:none;border:1px solid var(--border);color:var(--dim);
-            width:34px;height:34px;border-radius:6px;cursor:pointer;font-size:13px;
-            display:flex;align-items:center;justify-content:center;transition:all 0.2s;flex-shrink:0;">⚙</button>
+            min-width:40px;height:40px;border-radius:6px;cursor:pointer;font-size:16px;
+            display:flex !important;align-items:center;justify-content:center;transition:all 0.2s;flex-shrink:0;padding:0 10px;">☰</button>
+          <button onclick="openModal()" title="Configure" style="
+            background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.25);color:var(--gold);
+            min-width:40px;height:40px;border-radius:6px;cursor:pointer;font-size:14px;
+            display:flex !important;align-items:center;justify-content:center;transition:all 0.2s;flex-shrink:0;padding:0 10px;
+            font-family:'DM Mono',monospace;letter-spacing:1px;">⚙</button>
         </div>
       </div>
       <iframe id="app-frame" allow="fullscreen"></iframe>
@@ -1502,39 +1632,7 @@ main {
 
         <div style="height:1px;background:var(--border);margin-bottom:20px;"></div>
 
-        <!-- KEYS ONLY (lightweight) -->
-        <div style="margin-bottom:20px;">
-          <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:3px;color:var(--dim);text-transform:uppercase;margin-bottom:10px;">Keys Only</div>
-          <div style="font-size:11px;color:var(--dim);line-height:1.6;margin-bottom:12px;">
-            Export just the app names and API keys — lightweight file for quick key sharing or injection without icons or metadata.
-          </div>
-          <div class="io-grid">
-            <button class="io-btn io-btn-ghost" onclick="exportKeys()">↓ &nbsp;Export Keys</button>
-            <label class="io-btn io-btn-ghost" style="text-align:center;display:flex;align-items:center;justify-content:center;cursor:pointer;">
-              ↑ &nbsp;Import Keys
-              <input type="file" accept=".json" style="display:none" onchange="importKeys(event)">
-            </label>
-          </div>
-        </div>
-
-        <div style="height:1px;background:var(--border);margin-bottom:20px;"></div>
-
-        <!-- APPS ONLY (no icons) -->
-        <div>
-          <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:3px;color:var(--dim);text-transform:uppercase;margin-bottom:10px;">Apps Config (no icons)</div>
-          <div style="font-size:11px;color:var(--dim);line-height:1.6;margin-bottom:12px;">
-            URLs, names, tags, descriptions — no base64 icons. Smaller file, safe to share or commit to version control.
-          </div>
-          <div class="io-grid">
-            <button class="io-btn io-btn-ghost" onclick="exportApps()">↓ &nbsp;Export Apps</button>
-            <label class="io-btn io-btn-ghost" style="text-align:center;display:flex;align-items:center;justify-content:center;cursor:pointer;">
-              ↑ &nbsp;Import Apps
-              <input type="file" accept=".json" style="display:none" onchange="importApps(event)">
-            </label>
-          </div>
-        </div>
-
-        <div style="height:1px;background:var(--border);margin-bottom:20px;"></div>
+                <div style="height:1px;background:var(--border);margin-bottom:20px;"></div>
 
         <!-- MARKETING CARD -->
         <div>
@@ -1556,7 +1654,7 @@ main {
 <div class="toast" id="toast"></div>
 
 <script>
-const VERSION = '3.1';
+const VERSION = '3.2';
 // ── STATE ──
 let apps = JSON.parse(localStorage.getItem('nexus-apps') || 'null') || [
   {
@@ -2065,6 +2163,160 @@ function renderGrid() {
   grid.innerHTML = '';
   document.getElementById('app-count-label').textContent = `${apps.length} ${apps.length === 1 ? 'entry' : 'entries'}`;
 
+  // Group apps
+  const grouped = {};
+  const ungrouped = [];
+  apps.forEach(app => {
+    const g = app.group || '';
+    if (g) {
+      if (!grouped[g]) grouped[g] = [];
+      grouped[g].push(app);
+    } else {
+      ungrouped.push(app);
+    }
+  });
+
+  const collapsedGroups = JSON.parse(localStorage.getItem('nexus-collapsed-groups') || '{}');
+
+  const renderAppCard = (app) => {
+    const shortUrl    = app.url.replace(/^https?:\/\//, '').replace(/\/$/, '');
+    const displayName = app.name || app.meta?.title || '?';
+    const displayDesc = app.desc || app.meta?.desc || 'No description available.';
+    const displayTag  = app.tag  || app.meta?.tag  || 'Application';
+    const initial     = displayName.charAt(0).toUpperCase();
+    const iconSrc     = app.userIcon || app.meta?.favicon || '';
+    const themeColor  = app.meta?.themeColor || '';
+
+    const card = document.createElement('div');
+    card.className = 'app-card';
+    card.id = `card-${app.id}`;
+    card.innerHTML = `
+      <div class="card-preview">
+        ${iconSrc
+          ? `<div class="card-preview-user-icon"><img src="${iconSrc}" alt="${escHtml(displayName)}" onerror="this.parentElement.innerHTML='<span class=card-preview-initial>${escHtml(initial)}</span>'"></div>`
+          : `<span class="card-preview-initial" style="${themeColor ? `color:${themeColor}` : ''}">${escHtml(initial)}</span>`
+        }
+        <span class="status-pip pip-checking" id="cardpip-${app.id}"></span>
+        <button class="pin-btn ${pinnedApps.has(app.id)?'pinned':''}" onclick="event.stopPropagation(); togglePin('${app.id}')" title="${pinnedApps.has(app.id)?'Unpin from top':'Pin to top'}">📌</button>
+      </div>
+      <div class="card-body">
+        <div class="card-tag">${escHtml(displayTag)}</div>
+        <div class="card-name">${escHtml(displayName)}</div>
+        <div class="card-desc">${escHtml(displayDesc)}</div>
+        <div class="card-footer">
+          <span class="card-url-display">${vault[app.id]?.htmlFile ? '<span style="color:var(--green);font-size:8px;letter-spacing:1px;margin-right:4px;">● LOCAL</span>' : ''}${escHtml(shortUrl)}</span>
+          <button class="card-launch-btn" onclick="event.stopPropagation(); launch(app)">Launch →</button>
+        </div>
+        <span class="s-checking" id="cardstat-${app.id}" style="font-size:9px;letter-spacing:2px;">CHECKING</span>
+      </div>
+    `;
+
+    // Drag events for reorder
+    card.style.position = 'relative';
+    card.draggable = true;
+    card.dataset.appId = app.id;
+    card.addEventListener('dragstart', onDragStart);
+    card.addEventListener('dragover',  onDragOver);
+    card.addEventListener('dragleave', onDragLeave);
+    card.addEventListener('drop',      onDrop);
+    card.addEventListener('dragend',   onDragEnd);
+    card.onclick = (e) => {
+      if (window._reorderActive) return;
+      launch(app);
+    };
+    return card;
+  };
+
+  const renderGroup = (name, groupApps, isUngrouped) => {
+    if (groupApps.length === 0) return;
+    const isCollapsed = collapsedGroups[name] || false;
+    const section = document.createElement('div');
+    section.className = 'group-section';
+
+    const header = document.createElement('div');
+    header.className = 'group-header';
+    header.innerHTML = `
+      <span class="group-chevron${isCollapsed?' collapsed':''}">▾</span>
+      <span class="group-name">${isUngrouped ? 'General' : escHtml(name)}</span>
+      <div class="group-rule"></div>
+      <span class="group-count">${groupApps.length} app${groupApps.length!==1?'s':''}</span>
+    `;
+    header.onclick = () => {
+      const chevron = header.querySelector('.group-chevron');
+      const cards   = section.querySelector('.group-cards');
+      const key     = isUngrouped ? '__ungrouped__' : name;
+      const nowCollapsed = !collapsedGroups[key];
+      collapsedGroups[key] = nowCollapsed;
+      localStorage.setItem('nexus-collapsed-groups', JSON.stringify(collapsedGroups));
+      chevron.classList.toggle('collapsed', nowCollapsed);
+      cards.classList.toggle('collapsed', nowCollapsed);
+    };
+
+    const cardsDiv = document.createElement('div');
+    cardsDiv.className = 'group-cards cards-grid' + (isCollapsed ? ' collapsed' : '');
+    groupApps.forEach(app => cardsDiv.appendChild(renderAppCard(app)));
+
+    section.appendChild(header);
+    section.appendChild(cardsDiv);
+    grid.appendChild(section);
+  };
+
+  // Render named groups first, then ungrouped
+  Object.entries(grouped).forEach(([name, groupApps]) => renderGroup(name, groupApps, false));
+  if (ungrouped.length > 0) renderGroup('__ungrouped__', ungrouped, true);
+
+  // Status checks staggered
+  apps.forEach((app, i) => {
+    setTimeout(() => checkStatus(app), i * 120);
+    setTimeout(() => applyCardGlow(app), 60 + i * 10);
+  });
+
+  // Render pinned strip
+  renderPinnedStrip();
+}
+
+
+function renderSidebar() {
+  const list = document.getElementById('sidebar-list');
+  list.innerHTML = '';
+  apps.forEach(app => {
+    const iconSrc = app.userIcon || app.meta?.favicon || '';
+    const initial = (app.name || '?').charAt(0).toUpperCase();
+    const tc      = app.meta?.themeColor || '';
+    const iconInner = iconSrc
+      ? `<img src="${iconSrc}" style="width:100%;height:100%;object-fit:cover;border-radius:7px;" onerror="this.style.display='none'">`
+      : `<span style="color:${tc && !isDarkColor(tc) ? tc : 'var(--gold)'};">${initial}</span>`;
+
+    const el = document.createElement('div');
+    el.className = 'nav-item' + (activeApp?.id === app.id ? ' active' : '');
+    el.id = `nav-${app.id}`;
+    el.innerHTML = `
+      <span class="status-pip pip-checking" id="pip-${app.id}"></span>
+      <div class="nav-icon" title="${app.name}">${iconInner}</div>
+      <div class="nav-item-info">
+        <div class="nav-item-name">${app.name}</div>
+        <div class="nav-item-tag">${app.tag || ''}</div>
+      </div>
+      <span class="nav-item-status s-checking" id="navstat-${app.id}">…</span>
+    `;
+    el.onclick = () => launch(app);
+    el.draggable = true;
+    list.appendChild(el);
+  });
+}
+
+function isDarkColor(hex) {
+  const h = hex.replace('#','');
+  if (h.length < 6) return true;
+  const r = parseInt(h.slice(0,2),16), g = parseInt(h.slice(2,4),16), b = parseInt(h.slice(4,6),16);
+  return (r*0.299 + g*0.587 + b*0.114) < 40;
+}
+
+function renderGrid() {
+  const grid = document.getElementById('cards-grid');
+  grid.innerHTML = '';
+  document.getElementById('app-count-label').textContent = `${apps.length} ${apps.length === 1 ? 'entry' : 'entries'}`;
+
   apps.forEach(app => {
     const shortUrl    = app.url.replace(/^https?:\/\//, '').replace(/\/$/, '');
     // Manual fields always win over scraped
@@ -2135,7 +2387,8 @@ function renderGrid() {
         <div class="card-desc">${displayDesc}</div>
         <div class="card-footer">
           <span class="card-url-display">${vault[app.id]?.htmlFile ? '<span style="color:var(--green);font-size:8px;letter-spacing:1px;margin-right:4px;">● LOCAL</span>' : ''}${shortUrl}</span>
-          <button class="card-launch-btn" onclick="event.stopPropagation(); launch(apps.find(a=>a.id==='${app.id}'))">Launch →</button>
+          <button class="pin-btn ${pinnedApps.has(app.id)?'pinned':''}" onclick="event.stopPropagation(); togglePin('${app.id}')" title="${pinnedApps.has(app.id)?'Unpin':'Pin to top'}">📌</button>
+      <button class="card-launch-btn" onclick="event.stopPropagation(); launch(apps.find(a=>a.id==='${app.id}'))">Launch →</button>
         </div>
       </div>
     `;
@@ -2188,7 +2441,7 @@ function closeMobileDrawer() {
 
 // ── SIDEBAR COLLAPSE (desktop) / DRAWER (mobile) ──
 function toggleSidebar() {
-  const isMobile = window.innerWidth <= 768;
+  const isMobile = window.innerWidth <= 1024;
   if (isMobile) {
     const sidebar = document.getElementById('sidebar');
     if (sidebar.classList.contains('drawer-open')) {
@@ -2751,6 +3004,11 @@ function renderConfigRows() {
           oninput="updateApp('${app.id}','key',this.value)">
         <textarea class="config-input-desc" placeholder="Description (manual input overrides scan)"
           oninput="updateApp('${app.id}','desc',this.value)">${escHtml(app.desc||'')}</textarea>
+        <select class="group-select" onchange="updateApp('${app.id}','group',this.value)">
+          <option value="">— No Group —</option>
+          ${getGroups().map(g => `<option value="${escHtml(g)}" ${app.group===g?'selected':''}>${escHtml(g)}</option>`).join('')}
+          <option value="__new__">＋ New group…</option>
+        </select>
       </div>
       ${app.userIcon ? `<button onclick="clearIcon('${app.id}')" style="background:none;border:none;color:var(--dim2);font-size:10px;font-family:'DM Mono',monospace;letter-spacing:1px;cursor:pointer;padding:4px 0;text-align:left;">✕ Remove custom icon</button>` : ''}
     `;
@@ -2848,19 +3106,6 @@ function debounceRescrape(app) {
   _scrapeTimers[app.id] = setTimeout(() => scrapeMetadata(app), 1200);
 }
 
-function updateApp(id, field, val) {
-  const app = apps.find(a => a.id === id);
-  if (!app) return;
-  app[field] = val;
-  if (field === 'name') app.userSetName = true;
-  if (field === 'desc') app.userSetDesc = true;
-  if (field === 'tag')  app.userSetTag  = true;
-  if (field === 'url' && val.startsWith('http') && val.length > 12) {
-    app.meta = null;
-    debounceRescrape(app);
-  }
-  save();
-}
 
 function addApp() {
   const newApp = { id: uid(), name: 'New App', tag: 'Application', desc: '', url: 'https://', key: '', meta: null };
@@ -2893,7 +3138,7 @@ function resetLogo() {
   document.querySelector('.wordmark').innerHTML = `
     <div class="wordmark-label">App Portfolio</div>
     <div class="wordmark-title">NEXUS</div>
-    <div class="wordmark-sub">v3.1 — johnlaz.github.io</div>
+    <div class="wordmark-sub">v3.2 — johnlaz.github.io</div>
   `;
   document.querySelector('.wordmark').onclick = showDashboard;
 }
@@ -3673,7 +3918,7 @@ function vaultRenderGrid() {
   let stored = 0;
   grid.innerHTML = apps.map(app => {
     const entry = vault[app.id];
-    const hasData = !!entry?.raw;
+    const hasData = !!(entry?.raw || entry?.htmlFile);
     if (hasData) stored++;
 
     const iconSrc = app.userIcon || app.meta?.favicon || '';
@@ -3681,7 +3926,8 @@ function vaultRenderGrid() {
       ? `<img src="${iconSrc}" width="16" height="16" style="border-radius:4px;object-fit:contain;flex-shrink:0;" onerror="this.style.display='none'">`
       : `<span style="width:16px;height:16px;border-radius:4px;background:rgba(0,212,255,0.12);display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:var(--gold);flex-shrink:0;">${app.name.charAt(0)}</span>`;
 
-    const fieldCount = hasData ? Object.keys(entry.raw).length : 0;
+    const fieldCount = entry?.raw ? Object.keys(entry.raw).length : 0;
+    const hasHtml = !!entry?.htmlFile;
     const dateStr = hasData ? new Date(entry.storedAt).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '';
 
     return `<div style="background:var(--surface2);border:1px solid ${hasData?'rgba(61,186,122,0.3)':'var(--border)'};border-radius:7px;padding:10px 12px;display:flex;align-items:center;gap:10px;">
@@ -3689,7 +3935,9 @@ function vaultRenderGrid() {
       <div style="flex-grow:1;min-width:0;">
         <div style="font-size:12px;font-weight:500;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${app.name}</div>
         <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:1px;margin-top:2px;${hasData?'color:var(--green);':'color:var(--dim);'}">
-          ${hasData ? `✓ ${fieldCount} fields · ${dateStr} · ${entry.filename}` : 'No file uploaded'}
+          ${hasData
+            ? `${fieldCount ? '✓ '+fieldCount+' fields' : ''}${hasHtml ? (fieldCount?' · ':'')+'📄 HTML' : ''} · ${dateStr}${entry.filename ? ' · '+entry.filename : ''}`
+            : 'No file uploaded'}
         </div>
       </div>
       <div style="display:flex;gap:5px;align-items:center;flex-shrink:0;">
@@ -3744,13 +3992,26 @@ function vaultUploadApp(appId, event) {
 function vaultDownloadApp(appId) {
   const entry = vault[appId];
   if (!entry) { toast('No file stored for this app'); return; }
-  const blob = new Blob([JSON.stringify(entry.raw, null, 2)], { type: 'application/json' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  // Use original filename if available, else generate one
-  a.download = entry.filename || `${entry.name.toLowerCase().replace(/\s+/g,'-')}_data.json`;
-  a.click();
-  toast(`↓ ${entry.name} downloaded`);
+
+  if (entry.raw) {
+    // Download the app's JSON data file
+    const blob = new Blob([JSON.stringify(entry.raw, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = entry.filename || `${(entry.name||appId).toLowerCase().replace(/\s+/g,'-')}_data.json`;
+    a.click();
+    toast(`↓ ${entry.name || appId} JSON downloaded`);
+  } else if (entry.htmlFile) {
+    // Download the embedded HTML file
+    const blob = new Blob([entry.htmlFile], { type: 'text/html' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = entry.htmlFilename || `${(entry.name||appId).toLowerCase().replace(/\s+/g,'-')}.html`;
+    a.click();
+    toast(`↓ ${entry.htmlFilename || entry.name} HTML downloaded`);
+  } else {
+    toast('No downloadable data stored for this app');
+  }
 }
 
 function vaultClearApp(appId) {
@@ -3794,6 +4055,8 @@ function exportFullRestore() {
     notes:       notes || '',
     noteEntries: noteEntries || [],
     // ── All apps — full data including keys, icons, meta, order ──
+    pinnedApps: [...pinnedApps],
+    collapsedGroups: JSON.parse(localStorage.getItem('nexus-collapsed-groups') || '{}'),
     apps: apps.map(a => ({
       id:          a.id,
       name:        a.name,
@@ -3801,24 +4064,28 @@ function exportFullRestore() {
       desc:        a.desc,
       url:         a.url,
       key:         a.key || '',
+      group:       a.group || '',
       userIcon:    a.userIcon || null,
       userSetName: a.userSetName || false,
       userSetDesc: a.userSetDesc || false,
       userSetTag:  a.userSetTag  || false,
       meta:        a.meta || null,
     })),
-    // ── Vault: per-app JSON files uploaded by user ──
+    // ── Vault: per-app JSON files + embedded local HTML ──
+    // Only include entries that actually have data
     vault: Object.fromEntries(
-      Object.entries(vault).map(([id, v]) => [id, {
-        name:         v.name,
-        url:          v.url,
-        filename:     v.filename     || null,
-        storedAt:     v.storedAt     || null,
-        raw:          v.raw          || null,   // app's own JSON data
-        htmlFile:     v.htmlFile     || null,   // embedded local HTML
-        htmlFilename: v.htmlFilename || null,
-        htmlStoredAt: v.htmlStoredAt || null,
-      }])
+      Object.entries(vault)
+        .filter(([,v]) => v.raw || v.htmlFile)
+        .map(([id, v]) => [id, {
+          name:         v.name,
+          url:          v.url,
+          filename:     v.filename     || null,
+          storedAt:     v.storedAt     || null,
+          raw:          v.raw          || null,
+          htmlFile:     v.htmlFile     || null,
+          htmlFilename: v.htmlFilename || null,
+          htmlStoredAt: v.htmlStoredAt || null,
+        }])
     ),
   };
 
@@ -3858,6 +4125,8 @@ function importFullRestore(e) {
       // Restore notes
       if (bundle.notes !== undefined)         { notes = bundle.notes; saveNotes(); }
       if (Array.isArray(bundle.noteEntries))  { noteEntries = bundle.noteEntries; saveNoteEntries(); }
+      if (Array.isArray(bundle.pinnedApps))   { pinnedApps = new Set(bundle.pinnedApps); savePins(); }
+      if (bundle.collapsedGroups)             { localStorage.setItem('nexus-collapsed-groups', JSON.stringify(bundle.collapsedGroups)); }
 
       // Restore vault (JSON files + local HTML)
       if (bundle.vault) {
@@ -3905,6 +4174,92 @@ function importFullRestore(e) {
 
 // ── LEGACY vaultImportMaster — still accepts old format ──
 function vaultImportMaster(e) { importFullRestore(e); }
+
+
+// ── PINNED APPS ──
+let pinnedApps = new Set(JSON.parse(localStorage.getItem('nexus-pinned') || '[]'));
+
+function savePins() {
+  localStorage.setItem('nexus-pinned', JSON.stringify([...pinnedApps]));
+}
+
+function togglePin(appId) {
+  if (pinnedApps.has(appId)) {
+    pinnedApps.delete(appId);
+  } else {
+    if (pinnedApps.size >= 6) { toast('Max 6 pinned apps'); return; }
+    pinnedApps.add(appId);
+  }
+  savePins();
+  // Update pin button state without full re-render
+  const btn = document.querySelector(`#card-${appId} .pin-btn`);
+  if (btn) btn.classList.toggle('pinned', pinnedApps.has(appId));
+  renderPinnedStrip();
+}
+
+function renderPinnedStrip() {
+  const strip = document.getElementById('pinned-strip');
+  if (!strip) return;
+  const pinned = apps.filter(a => pinnedApps.has(a.id));
+  strip.innerHTML = '';
+  strip.classList.toggle('has-pins', pinned.length > 0);
+
+  pinned.forEach(app => {
+    const iconSrc = app.userIcon || app.meta?.favicon || '';
+    const initial = (app.name || '?').charAt(0).toUpperCase();
+    const tc      = app.meta?.themeColor || '';
+
+    const tile = document.createElement('div');
+    tile.className = 'pinned-tile';
+    tile.title = app.name;
+    tile.innerHTML = `
+      <div class="pinned-tile-icon" style="${tc && !isDarkColor(tc) ? `box-shadow:0 0 12px ${tc}40` : ''}">
+        ${iconSrc
+          ? `<img src="${iconSrc}" alt="${escHtml(app.name)}" onerror="this.style.display='none'">`
+          : `<span style="color:${tc && !isDarkColor(tc) ? tc : 'var(--gold)'};">${escHtml(initial)}</span>`
+        }
+        <span class="pinned-tile-unpin" onclick="event.stopPropagation(); togglePin('${app.id}')" title="Unpin">✕</span>
+      </div>
+      <span class="pinned-tile-name">${escHtml(app.name)}</span>
+    `;
+    tile.onclick = () => launch(app);
+    strip.appendChild(tile);
+  });
+}
+
+// ── GROUPS ──
+function getGroups() {
+  const groups = new Set();
+  apps.forEach(a => { if (a.group) groups.add(a.group); });
+  return [...groups].sort();
+}
+
+function updateApp(id, field, value) {
+  const app = apps.find(a => a.id === id);
+  if (!app) return;
+
+  if (field === 'group' && value === '__new__') {
+    const name = prompt('New group name:');
+    if (!name?.trim()) {
+      // Reset select to current value
+      renderConfigRows();
+      return;
+    }
+    app.group = name.trim();
+    save();
+    renderConfigRows(); // refresh selects with new group
+    render();
+    return;
+  }
+
+  if (field === 'name')  { app.name  = value; app.userSetName = true; }
+  else if (field === 'desc')  { app.desc  = value; app.userSetDesc = true; }
+  else if (field === 'tag')   { app.tag   = value; app.userSetTag  = true; }
+  else if (field === 'url')   { app.url   = value; }
+  else if (field === 'key')   { app.key   = value; }
+  else if (field === 'group') { app.group = value; }
+  save();
+}
 
 // ── DRAG-TO-REORDER ──
 window._reorderActive = false;
@@ -4044,6 +4399,7 @@ function initSidebarDrag() {
 loadStoredLogo();
 updateGroqStatus();
 render();
+renderPinnedStrip();
 initNotes();
 vaultRenderGrid();
 const eyebrow = document.querySelector('.dash-eyebrow');
@@ -4067,7 +4423,7 @@ history.replaceState({ nexus: 'dashboard' }, '', '');
 initSidebarDrag();
 
 // Restore sidebar collapsed state on desktop
-if (window.innerWidth > 768 && localStorage.getItem('nexus-sidebar-collapsed') === '1') {
+if (window.innerWidth > 1024 && localStorage.getItem('nexus-sidebar-collapsed') === '1') {
   const sidebar   = document.getElementById('sidebar');
   const toggleBtn = document.getElementById('sidebar-toggle');
   sidebar?.classList.add('collapsed');
