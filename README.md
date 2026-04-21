@@ -1,4 +1,4 @@
-# NEXUS — App Portfolio `v3.3`
+# NEXUS — App Portfolio `v3.5`
 
 > A dark-luxury editorial PWA dashboard for managing, monitoring, and launching a personal suite of web apps. Built as a single HTML file — no frameworks, no build tools, no dependencies.
 
@@ -9,7 +9,7 @@ Live at: `https://johnlaz.github.io/nexus/`
 ## Features
 
 ### Dashboard
-- **20 apps pre-loaded** with icons, descriptions, and AI-enriched metadata
+- **20+ apps pre-loaded** with icons, descriptions, and AI-enriched metadata
 - **Pinned Apps Strip** — pin up to 6 apps to a persistent quick-launch bar at the top
 - **App Groups** — organize apps into named, collapsible groups (Business, Personal, Kids, etc.)
 - **Drag-to-reorder** — drag cards or sidebar items to rearrange; persists across sessions
