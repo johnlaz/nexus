@@ -1,4 +1,4 @@
-# NEXUS — App Portfolio `v3.5`
+# NEXUS — App Portfolio `v4.0`
 
 > A dark-luxury editorial PWA dashboard for managing, monitoring, and launching a personal suite of web apps. Built as a single HTML file — no frameworks, no build tools, no dependencies.
 
