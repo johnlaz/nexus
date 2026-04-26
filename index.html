@@ -422,7 +422,10 @@ main {
   align-items: baseline;
   gap: 16px;
   margin-bottom: 28px;
+  cursor: pointer;
+  user-select: none;
 }
+.section-header:hover .section-label { color: var(--gold); }
 .section-rule {
   flex-grow: 1;
   height: 1px;
@@ -435,6 +438,7 @@ main {
   color: var(--dim);
   text-transform: uppercase;
   flex-shrink: 0;
+  transition: color 0.2s;
 }
 .section-count {
   font-family: 'DM Mono', monospace;
@@ -442,6 +446,52 @@ main {
   color: var(--dim2);
   flex-shrink: 0;
 }
+.section-chevron {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--dim);
+  flex-shrink: 0;
+  transition: transform 0.25s cubic-bezier(0.23,1,0.32,1), color 0.2s;
+  display: inline-block;
+}
+.section-chevron.collapsed { transform: rotate(-90deg); }
+.section-header:hover .section-chevron { color: var(--gold); }
+.section-cards-wrap {
+  overflow: hidden;
+  transition: max-height 0.35s cubic-bezier(0.23,1,0.32,1), opacity 0.3s;
+  max-height: 9999px;
+  opacity: 1;
+}
+.section-cards-wrap.collapsed {
+  max-height: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Sidebar section label collapsible */
+.nav-section-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 20px 6px;
+  cursor: pointer;
+  user-select: none;
+}
+.nav-section-header:hover .nav-section-label { color: var(--gold-dim); }
+.nav-section-chevron {
+  font-size: 8px;
+  color: var(--dim);
+  transition: transform 0.2s, color 0.2s;
+  flex-shrink: 0;
+}
+.nav-section-chevron.collapsed { transform: rotate(-90deg); }
+.nav-section-header:hover .nav-section-chevron { color: var(--gold-dim); }
+.nav-section-items {
+  overflow: hidden;
+  transition: max-height 0.3s cubic-bezier(0.23,1,0.32,1);
+  max-height: 9999px;
+}
+.nav-section-items.collapsed { max-height: 0; }
 
 /* ── APP CARDS ── */
 .cards-grid {
@@ -1387,7 +1437,7 @@ main {
     <div class="wordmark" onclick="showDashboard()">
       <div class="wordmark-label">App Portfolio</div>
       <div class="wordmark-title">NEXUS</div>
-      <div class="wordmark-sub">v3.5 — johnlaz.github.io</div>
+      <div class="wordmark-sub">v4.0 — johnlaz.github.io</div>
     </div>
 
     <div class="sidebar-search">
@@ -1398,7 +1448,6 @@ main {
       </div>
     </div>
 
-    <div class="nav-section-label">Applications</div>
     <div class="app-list" id="sidebar-list"></div>
 
     <div class="sidebar-footer">
@@ -1451,21 +1500,8 @@ main {
         <!-- Pinned Apps Strip -->
         <div class="pinned-strip" id="pinned-strip"></div>
 
-        <div class="section-header">
-          <span class="section-label">Registered Apps</span>
-          <div class="section-rule"></div>
-          <span class="section-count" id="app-count-label">0 entries</span>
-          <button id="reorder-btn" onclick="toggleReorder()" style="
-            background:none;border:1px solid var(--border);color:var(--dim);
-            font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;
-            padding:5px 12px;border-radius:5px;cursor:pointer;
-            text-transform:uppercase;transition:all 0.2s;flex-shrink:0;"
-            onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--gold)'"
-            onmouseout="if(!window._reorderActive){this.style.borderColor='var(--border)';this.style.color='var(--dim)'}">
-            ⠿ Reorder
-          </button>
-        </div>
-        <div class="cards-grid" id="cards-grid"></div>
+        <div id="sections-container"></div>
+        <span id="app-count-label" style="display:none">0 entries</span>
       </div>
     </div>
 
@@ -1705,7 +1741,7 @@ main {
 <div class="toast" id="toast"></div>
 
 <script>
-const VERSION = '3.5';
+const VERSION = '4.0';
 // ── STATE ──
 let apps = JSON.parse(localStorage.getItem('nexus-apps') || 'null') || [
   {
@@ -2503,32 +2539,71 @@ function renderGrid() {
 }
 
 
+
 function renderSidebar() {
   const list = document.getElementById('sidebar-list');
   list.innerHTML = '';
-  apps.forEach(app => {
-    const iconSrc = app.userIcon || app.meta?.favicon || '';
-    const initial = (app.name || '?').charAt(0).toUpperCase();
-    const tc      = app.meta?.themeColor || '';
-    const iconInner = iconSrc
-      ? `<img src="${iconSrc}" style="width:100%;height:100%;object-fit:cover;border-radius:7px;" onerror="this.style.display='none'">`
-      : `<span style="color:${tc && !isDarkColor(tc) ? tc : 'var(--gold)'};">${initial}</span>`;
 
-    const el = document.createElement('div');
-    el.className = 'nav-item' + (activeApp?.id === app.id ? ' active' : '');
-    el.id = `nav-${app.id}`;
-    el.innerHTML = `
-      <span class="status-pip pip-checking" id="pip-${app.id}"></span>
-      <div class="nav-icon" title="${app.name}">${iconInner}</div>
-      <div class="nav-item-info">
-        <div class="nav-item-name">${app.name}</div>
-        <div class="nav-item-tag">${app.tag || ''}</div>
-      </div>
-      <span class="nav-item-status s-checking" id="navstat-${app.id}">…</span>
+  const SECTIONS = [
+    { key: 'registered', label: 'Applications', defaultCollapsed: false },
+    { key: 'development', label: 'Development', defaultCollapsed: true },
+    { key: 'retired', label: 'Retired', defaultCollapsed: true },
+  ];
+
+  const sidebarCollapsed = JSON.parse(localStorage.getItem('nexus-sidebar-sections') || '{}');
+
+  SECTIONS.forEach(({ key, label, defaultCollapsed }) => {
+    const sectionApps = apps.filter(a => (a.section || 'registered') === key);
+    if (sectionApps.length === 0) return;
+
+    const isCollapsed = sidebarCollapsed[key] !== undefined ? sidebarCollapsed[key] : defaultCollapsed;
+
+    const headerEl = document.createElement('div');
+    headerEl.className = 'nav-section-header';
+    headerEl.innerHTML = `
+      <span class="nav-section-chevron${isCollapsed ? ' collapsed' : ''}">▾</span>
+      <span class="nav-section-label">${label}</span>
     `;
-    el.onclick = () => launch(app);
-    el.draggable = true;
-    list.appendChild(el);
+
+    const itemsEl = document.createElement('div');
+    itemsEl.className = 'nav-section-items' + (isCollapsed ? ' collapsed' : '');
+
+    headerEl.onclick = () => {
+      const chevron = headerEl.querySelector('.nav-section-chevron');
+      const nowCollapsed = !itemsEl.classList.contains('collapsed');
+      itemsEl.classList.toggle('collapsed', nowCollapsed);
+      chevron.classList.toggle('collapsed', nowCollapsed);
+      sidebarCollapsed[key] = nowCollapsed;
+      localStorage.setItem('nexus-sidebar-sections', JSON.stringify(sidebarCollapsed));
+    };
+
+    sectionApps.forEach(app => {
+      const iconSrc = app.userIcon || app.meta?.favicon || '';
+      const initial = (app.name || '?').charAt(0).toUpperCase();
+      const tc      = app.meta?.themeColor || '';
+      const iconInner = iconSrc
+        ? `<img src="${iconSrc}" style="width:100%;height:100%;object-fit:cover;border-radius:7px;" onerror="this.style.display='none'">`
+        : `<span style="color:${tc && !isDarkColor(tc) ? tc : 'var(--gold)'};">${initial}</span>`;
+
+      const el = document.createElement('div');
+      el.className = 'nav-item' + (activeApp?.id === app.id ? ' active' : '');
+      el.id = `nav-${app.id}`;
+      el.innerHTML = `
+        <span class="status-pip pip-checking" id="pip-${app.id}"></span>
+        <div class="nav-icon" title="${app.name}">${iconInner}</div>
+        <div class="nav-item-info">
+          <div class="nav-item-name">${app.name}</div>
+          <div class="nav-item-tag">${app.tag || ''}</div>
+        </div>
+        <span class="nav-item-status s-checking" id="navstat-${app.id}">…</span>
+      `;
+      el.onclick = () => launch(app);
+      el.draggable = true;
+      itemsEl.appendChild(el);
+    });
+
+    list.appendChild(headerEl);
+    list.appendChild(itemsEl);
   });
 }
 
@@ -2540,18 +2615,24 @@ function isDarkColor(hex) {
 }
 
 function renderGrid() {
-  const grid = document.getElementById('cards-grid');
-  grid.innerHTML = '';
-  document.getElementById('app-count-label').textContent = `${apps.length} ${apps.length === 1 ? 'entry' : 'entries'}`;
+  const container = document.getElementById('sections-container');
+  container.innerHTML = '';
 
-  apps.forEach(app => {
+  const SECTIONS = [
+    { key: 'registered', label: 'Registered Apps', defaultCollapsed: false },
+    { key: 'development', label: 'In Development', defaultCollapsed: true },
+    { key: 'retired', label: 'Retired', defaultCollapsed: true },
+  ];
+
+  const collapsedSections = JSON.parse(localStorage.getItem('nexus-collapsed-sections') || '{}');
+  let totalCount = 0;
+
+  const renderAppCard = (app) => {
     const shortUrl    = app.url.replace(/^https?:\/\//, '').replace(/\/$/, '');
-    // Manual fields always win over scraped
     const displayName = app.name || app.meta?.title || '?';
     const displayDesc = app.desc || app.meta?.desc || 'No description available.';
     const displayTag  = app.tag  || app.meta?.tag  || 'Application';
     const initial     = displayName.charAt(0).toUpperCase();
-    // userIcon > scraped favicon
     const iconSrc     = app.userIcon || app.meta?.favicon || '';
     const ogImage     = app.meta?.ogImage || '';
     const themeColor  = app.meta?.themeColor || '';
@@ -2560,7 +2641,6 @@ function renderGrid() {
     card.className = 'app-card';
     card.id = `card-${app.id}`;
 
-    // Preview area: userIcon (large centered) > og:image > letter placeholder
     let previewInner;
     if (app.userIcon) {
       previewInner = `
@@ -2615,11 +2695,10 @@ function renderGrid() {
         <div class="card-footer">
           <span class="card-url-display">${vault[app.id]?.htmlFile ? '<span style="color:var(--green);font-size:8px;letter-spacing:1px;margin-right:4px;">● LOCAL</span>' : ''}${shortUrl}</span>
           <button class="pin-btn ${pinnedApps.has(app.id)?'pinned':''}" onclick="event.stopPropagation(); togglePin('${app.id}')" title="${pinnedApps.has(app.id)?'Unpin':'Pin to top'}">📌</button>
-      <button class="card-launch-btn" onclick="event.stopPropagation(); launch(app)">Launch →</button>
+          <button class="card-launch-btn" onclick="event.stopPropagation(); launch(app)">Launch →</button>
         </div>
       </div>
     `;
-    // Drag handle (shown in reorder mode)
     const handle = document.createElement('div');
     handle.className = 'card-drag-handle';
     handle.innerHTML = '⠿';
@@ -2627,7 +2706,6 @@ function renderGrid() {
     card.style.position = 'relative';
     card.appendChild(handle);
 
-    // Drag events
     card.draggable = true;
     card.dataset.appId = app.id;
     card.addEventListener('dragstart', onDragStart);
@@ -2635,26 +2713,82 @@ function renderGrid() {
     card.addEventListener('dragleave', onDragLeave);
     card.addEventListener('drop',      onDrop);
     card.addEventListener('dragend',   onDragEnd);
+    card.onclick = (e) => { if (window._reorderActive) return; launch(app); };
+    return card;
+  };
 
-    card.onclick = (e) => {
-      if (window._reorderActive) return; // block launch while reordering
-      launch(app);
+  SECTIONS.forEach(({ key, label, defaultCollapsed }) => {
+    const sectionApps = apps.filter(a => (a.section || 'registered') === key);
+    if (sectionApps.length === 0) return;
+    totalCount += sectionApps.length;
+
+    const isCollapsed = collapsedSections[key] !== undefined ? collapsedSections[key] : defaultCollapsed;
+
+    // Section header
+    const headerEl = document.createElement('div');
+    headerEl.className = 'section-header';
+    const isRegistered = key === 'registered';
+    headerEl.innerHTML = `
+      <span class="section-chevron${isCollapsed ? ' collapsed' : ''}">▾</span>
+      <span class="section-label">${label}</span>
+      <div class="section-rule"></div>
+      <span class="section-count">${sectionApps.length} ${sectionApps.length === 1 ? 'app' : 'apps'}</span>
+      ${isRegistered ? `<button id="reorder-btn" onclick="event.stopPropagation(); toggleReorder()" style="
+        background:none;border:1px solid var(--border);color:var(--dim);
+        font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;
+        padding:5px 12px;border-radius:5px;cursor:pointer;
+        text-transform:uppercase;transition:all 0.2s;flex-shrink:0;"
+        onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--gold)'"
+        onmouseout="if(!window._reorderActive){this.style.borderColor='var(--border)';this.style.color='var(--dim)'}">
+        ⠿ Reorder
+      </button>` : ''}
+    `;
+
+    // Cards wrap
+    const wrapEl = document.createElement('div');
+    wrapEl.className = 'section-cards-wrap' + (isCollapsed ? ' collapsed' : '');
+    // Also add an inner grid so margin-bottom still works
+    const gridEl = document.createElement('div');
+    gridEl.className = 'cards-grid';
+    gridEl.id = `cards-grid-${key}`;
+    // Allow existing reorder code to find cards-grid for registered section
+    if (isRegistered) gridEl.id = 'cards-grid';
+    wrapEl.appendChild(gridEl);
+
+    headerEl.onclick = (e) => {
+      if (e.target.closest('#reorder-btn')) return;
+      const chevron = headerEl.querySelector('.section-chevron');
+      const nowCollapsed = !wrapEl.classList.contains('collapsed');
+      wrapEl.classList.toggle('collapsed', nowCollapsed);
+      chevron.classList.toggle('collapsed', nowCollapsed);
+      collapsedSections[key] = nowCollapsed;
+      localStorage.setItem('nexus-collapsed-sections', JSON.stringify(collapsedSections));
     };
-    grid.appendChild(card);
 
-    // Auto-scrape if no metadata yet (only fires once per app)
+    sectionApps.forEach(app => gridEl.appendChild(renderAppCard(app)));
+
+    container.appendChild(headerEl);
+    container.appendChild(wrapEl);
+  });
+
+  document.getElementById('app-count-label').textContent = `${totalCount} ${totalCount === 1 ? 'entry' : 'entries'}`;
+
+  // Status checks and glows staggered
+  apps.forEach((app, i) => {
+    setTimeout(() => checkStatus(app), i * 120);
+    setTimeout(() => applyCardGlow(app), 60 + i * 10);
+  });
+
+  // Auto-scrape apps missing metadata
+  apps.forEach(app => {
     if (!app.meta && app.url && app.url.startsWith('http')) {
       scrapeMetadata(app);
     }
   });
 
-  // Batch status checks and glows AFTER all cards are in DOM
-  // Stagger to avoid hammering network all at once
-  apps.forEach((app, i) => {
-    setTimeout(() => checkStatus(app), i * 120);
-    setTimeout(() => applyCardGlow(app), 60 + i * 10);
-  });
+  renderPinnedStrip();
 }
+
 
 // ── MOBILE DRAWER ──
 function openMobileDrawer() {
@@ -3236,6 +3370,11 @@ function renderConfigRows() {
           ${getGroups().map(g => `<option value="${escHtml(g)}" ${app.group===g?'selected':''}>${escHtml(g)}</option>`).join('')}
           <option value="__new__">＋ New group…</option>
         </select>
+        <select class="group-select" onchange="updateApp('${app.id}','section',this.value)" style="margin-top:6px;">
+          <option value="registered" ${(!app.section||app.section==='registered')?'selected':''}>📋 Registered Apps</option>
+          <option value="development" ${app.section==='development'?'selected':''}>🔧 In Development</option>
+          <option value="retired" ${app.section==='retired'?'selected':''}>🗄 Retired</option>
+        </select>
       </div>
       ${app.userIcon ? `<button onclick="clearIcon('${app.id}')" style="background:none;border:none;color:var(--dim2);font-size:10px;font-family:'DM Mono',monospace;letter-spacing:1px;cursor:pointer;padding:4px 0;text-align:left;">✕ Remove custom icon</button>` : ''}
     `;
@@ -3365,7 +3504,7 @@ function resetLogo() {
   document.querySelector('.wordmark').innerHTML = `
     <div class="wordmark-label">App Portfolio</div>
     <div class="wordmark-title">NEXUS</div>
-    <div class="wordmark-sub">v3.5 — johnlaz.github.io</div>
+    <div class="wordmark-sub">v4.0 — johnlaz.github.io</div>
   `;
   document.querySelector('.wordmark').onclick = showDashboard;
 }
@@ -4486,6 +4625,7 @@ function updateApp(id, field, value) {
   else if (field === 'url')   { app.url   = value; }
   else if (field === 'key')   { app.key   = value; }
   else if (field === 'group') { app.group = value; }
+  else if (field === 'section') { app.section = value; render(); }
   save();
 }
 
