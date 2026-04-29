@@ -1719,6 +1719,25 @@ main {
 
         <div style="height:1px;background:var(--border);margin-bottom:20px;"></div>
 
+        <!-- EXPORT AS index.html -->
+        <div style="margin-bottom:20px;padding:16px;background:linear-gradient(135deg,rgba(212,175,55,0.06),rgba(212,175,55,0.02));border:1px solid rgba(212,175,55,0.2);border-radius:8px;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+            <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;">⬡ Export index.html</div>
+            <div style="font-family:'DM Mono',monospace;font-size:8px;letter-spacing:1px;color:var(--surface);background:var(--green);padding:2px 7px;border-radius:10px;text-transform:uppercase;">GitHub Ready</div>
+          </div>
+          <div style="font-size:11px;color:var(--white);line-height:1.7;margin-bottom:6px;font-weight:500;">
+            Bake your current apps into a fresh index.html.
+          </div>
+          <div style="font-size:10px;color:var(--dim);line-height:1.7;margin-bottom:14px;">
+            Captures your live app list — names, icons, sections, metadata — and writes them into the page source as defaults. Upload directly to GitHub. No JSON import needed on first visit.
+          </div>
+          <button class="io-btn io-btn-primary" onclick="exportIndexHTML()" style="width:100%;font-size:10px;padding:11px;border-color:rgba(212,175,55,0.4);background:rgba(212,175,55,0.08);color:var(--gold);">
+            ↓ &nbsp;Download index.html
+          </button>
+        </div>
+
+        <div style="height:1px;background:var(--border);margin-bottom:20px;"></div>
+
                 <div style="height:1px;background:var(--border);margin-bottom:20px;"></div>
 
         <!-- MARKETING CARD -->
@@ -3619,7 +3638,65 @@ function exportSuite() {
   toast(`Full suite exported — ${apps.length} apps + notes`);
 }
 
-// Override importSuite to also restore notes
+// ── EXPORT AS index.html ──
+function exportIndexHTML() {
+  toast('Building index.html…', 2000);
+
+  // Snapshot current live apps (same shape as exportSuite)
+  const liveApps = apps.map(app => ({
+    id:          app.id,
+    name:        app.name,
+    tag:         app.tag,
+    desc:        app.desc,
+    url:         app.url,
+    key:         app.key || '',
+    group:       app.group || '',
+    section:     app.section || 'registered',
+    userIcon:    app.userIcon || null,
+    userSetName: app.userSetName || false,
+    userSetDesc: app.userSetDesc || false,
+    userSetTag:  app.userSetTag  || false,
+    meta:        app.meta || null,
+  }));
+
+  const appsJson = JSON.stringify(liveApps);
+  const marker   = "let apps = JSON.parse(localStorage.getItem('nexus-apps') || 'null') || ";
+
+  // Fetch the current page's own source
+  fetch(location.href)
+    .then(r => r.text())
+    .then(html => {
+      const markerIdx = html.indexOf(marker);
+      if (markerIdx === -1) { toast('⚠ Could not locate apps array in source'); return; }
+
+      const arrayStart = markerIdx + marker.length;
+      // Walk to find the matching closing ]
+      let depth = 0, i = arrayStart, inStr = false, esc = false;
+      while (i < html.length) {
+        const c = html[i];
+        if (esc)                        { esc = false; }
+        else if (c === '\\' && inStr)   { esc = true; }
+        else if (c === '"' && !esc)     { inStr = !inStr; }
+        else if (!inStr) {
+          if (c === '[') depth++;
+          else if (c === ']') { depth--; if (depth === 0) break; }
+        }
+        i++;
+      }
+
+      const newHtml = html.slice(0, markerIdx) + marker + appsJson + html.slice(i + 1);
+      const blob    = new Blob([newHtml], { type: 'text/html' });
+      const a       = document.createElement('a');
+      a.href        = URL.createObjectURL(blob);
+      a.download    = 'index.html';
+      a.click();
+      URL.revokeObjectURL(a.href);
+      toast(`✓ index.html downloaded — ${liveApps.length} apps baked in`, 3500);
+    })
+    .catch(() => toast('⚠ Could not fetch page source. Try again or check your connection.'));
+}
+
+
 const _origImportSuite = importSuite;
 function importSuite(e) {
   const reader = new FileReader();
