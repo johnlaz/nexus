@@ -1170,6 +1170,72 @@ main {
 .scan-all-btn .spin { display: inline-block; animation: spin 1s linear infinite; }
 @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
 
+/* ── SHARE FEATURE ── */
+.share-modal-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.88);
+  backdrop-filter: blur(10px);
+  z-index: 500;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.2s ease;
+}
+.share-modal-backdrop.open { display: flex; }
+.share-modal-panel {
+  background: var(--surface);
+  border: 1px solid var(--border-bright);
+  border-radius: 14px;
+  width: 700px;
+  max-width: 96vw;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: panelIn 0.3s cubic-bezier(0.23,1,0.32,1) both;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(0,212,255,0.05);
+}
+.share-modal-header {
+  padding: 24px 28px 18px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: flex-start; justify-content: space-between;
+  flex-shrink: 0;
+}
+.share-modal-eyebrow { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 3px; color: var(--gold); text-transform: uppercase; margin-bottom: 4px; }
+.share-modal-title { font-family: 'Playfair Display', serif; font-size: 1.4rem; font-weight: 700; color: var(--white); }
+.share-modal-subtitle { font-size: 11px; color: var(--dim); margin-top: 4px; line-height: 1.5; }
+.share-modal-body { flex-grow: 1; overflow-y: auto; padding: 22px 28px; }
+.share-modal-footer { padding: 16px 28px; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-shrink: 0; }
+.share-app-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; margin-top: 4px; }
+.share-app-tile { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface2); cursor: pointer; transition: all 0.18s; user-select: none; position: relative; }
+.share-app-tile:hover { border-color: rgba(0,212,255,0.3); background: rgba(0,212,255,0.03); }
+.share-app-tile.selected { border-color: var(--gold); background: rgba(0,212,255,0.07); box-shadow: 0 0 0 1px rgba(0,212,255,0.2); }
+.share-app-tile-check { position: absolute; top: 6px; right: 7px; width: 16px; height: 16px; border-radius: 50%; border: 1px solid var(--border); background: var(--surface3); display: flex; align-items: center; justify-content: center; font-size: 9px; color: transparent; transition: all 0.15s; flex-shrink: 0; }
+.share-app-tile.selected .share-app-tile-check { background: var(--gold); border-color: var(--gold); color: #000; }
+.share-app-tile-icon { width: 34px; height: 34px; border-radius: 8px; background: var(--surface3); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-family: 'Playfair Display', serif; font-size: 14px; font-weight: 900; font-style: italic; color: var(--dim); flex-shrink: 0; overflow: hidden; }
+.share-app-tile-icon img { width: 100%; height: 100%; object-fit: cover; border-radius: 7px; }
+.share-app-tile-info { min-width: 0; flex-grow: 1; }
+.share-app-tile-name { font-size: 12px; font-weight: 500; color: var(--white); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.share-app-tile-tag { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--dim); letter-spacing: 1px; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.share-select-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.share-select-count { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 2px; color: var(--dim); text-transform: uppercase; }
+.share-select-count strong { color: var(--gold); }
+.share-select-btns { display: flex; gap: 8px; }
+.share-sel-btn { background: none; border: 1px solid var(--border); color: var(--dim); font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 1px; text-transform: uppercase; padding: 5px 10px; border-radius: 5px; cursor: pointer; transition: all 0.2s; }
+.share-sel-btn:hover { border-color: var(--gold-dim); color: var(--gold); }
+.share-message-wrap { margin-top: 18px; }
+.share-message-label { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 3px; color: var(--dim); text-transform: uppercase; margin-bottom: 8px; }
+.share-message-input { width: 100%; background: var(--surface2); border: 1px solid var(--border); color: var(--white); font-family: 'Instrument Sans', sans-serif; font-size: 12px; padding: 10px 14px; border-radius: 7px; outline: none; transition: border-color 0.2s; resize: none; min-height: 64px; line-height: 1.6; }
+.share-message-input:focus { border-color: var(--gold-dim); }
+.share-message-input::placeholder { color: var(--dim); }
+.share-export-btn { background: var(--gold); border: none; color: #070b10; font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; font-weight: 600; padding: 11px 22px; border-radius: 7px; cursor: pointer; transition: all 0.2s; white-space: nowrap; display: flex; align-items: center; gap: 8px; box-shadow: 0 0 20px rgba(0,212,255,0.2); }
+.share-export-btn:hover { background: #00eeff; box-shadow: 0 0 28px rgba(0,212,255,0.35); }
+.share-export-btn:disabled { opacity: 0.35; cursor: not-allowed; pointer-events: none; }
+.share-cancel-btn { background: none; border: 1px solid var(--border); color: var(--dim); font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; padding: 11px 18px; border-radius: 7px; cursor: pointer; transition: all 0.2s; }
+.share-cancel-btn:hover { border-color: var(--dim); color: var(--white); }
+.share-btn { display: flex; align-items: center; gap: 7px; background: none; border: 1px solid rgba(0,212,255,0.3); color: var(--gold); font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 2px; text-transform: uppercase; padding: 5px 12px; border-radius: 5px; cursor: pointer; transition: all 0.2s; flex-shrink: 0; }
+.share-btn:hover { background: rgba(0,212,255,0.08); border-color: var(--gold); box-shadow: 0 0 12px rgba(0,212,255,0.15); }
+
 /* Scan progress bar */
 .scan-progress-bar {
   position: absolute;
@@ -1534,6 +1600,47 @@ main {
       <iframe id="app-frame" allow="fullscreen"></iframe>
     </div>
   </main>
+</div>
+
+<!-- ── SHARE MODAL ── -->
+<div class="share-modal-backdrop" id="share-modal" onclick="if(event.target===this)closeShareModal()">
+  <div class="share-modal-panel">
+    <div class="share-modal-header">
+      <div>
+        <div class="share-modal-eyebrow">↗ Export &amp; Share</div>
+        <div class="share-modal-title">Share App Cards</div>
+        <div class="share-modal-subtitle">Choose apps to include. Recipients get a beautiful standalone card page with clickable links.</div>
+      </div>
+      <button class="modal-close" onclick="closeShareModal()">✕</button>
+    </div>
+    <div class="share-modal-body">
+      <div class="share-select-bar">
+        <span class="share-select-count"><strong id="share-selected-count">0</strong> selected</span>
+        <div class="share-select-btns">
+          <button class="share-sel-btn" onclick="shareSelectAll()">Select All</button>
+          <button class="share-sel-btn" onclick="shareSelectNone()">Clear</button>
+          <button class="share-sel-btn" onclick="shareSelectLive()">Live Only</button>
+        </div>
+      </div>
+      <div class="share-app-grid" id="share-app-grid"></div>
+      <div class="share-message-wrap">
+        <div class="share-message-label">Personal Message (optional)</div>
+        <textarea class="share-message-input" id="share-message-input" placeholder="Add a note for the recipient — e.g. 'Here's my portfolio, feel free to explore!'"></textarea>
+      </div>
+    </div>
+    <div class="share-modal-footer">
+      <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:1px;color:var(--dim);">
+        Exports a self-contained <span style="color:var(--gold);">.html</span> file — no server needed
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;">
+        <button class="share-cancel-btn" onclick="closeShareModal()">Cancel</button>
+        <button class="share-export-btn" id="share-export-btn" onclick="generateShareCard()" disabled>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export Share Card
+        </button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- ── MODAL ── -->
@@ -2162,15 +2269,21 @@ function renderGrid() {
       <span class="section-label">${label}</span>
       <div class="section-rule"></div>
       <span class="section-count">${sectionApps.length} ${sectionApps.length === 1 ? 'app' : 'apps'}</span>
-      ${isRegistered ? `<button id="reorder-btn" onclick="event.stopPropagation(); toggleReorder()" style="
-        background:none;border:1px solid var(--border);color:var(--dim);
-        font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;
-        padding:5px 12px;border-radius:5px;cursor:pointer;
-        text-transform:uppercase;transition:all 0.2s;flex-shrink:0;"
-        onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--gold)'"
-        onmouseout="if(!window._reorderActive){this.style.borderColor='var(--border)';this.style.color='var(--dim)'}">
-        ⠿ Reorder
-      </button>` : ''}
+      ${isRegistered ? `<div style="display:flex;gap:8px;flex-shrink:0;align-items:center;">
+        <button id="reorder-btn" onclick="event.stopPropagation(); toggleReorder()" style="
+          background:none;border:1px solid var(--border);color:var(--dim);
+          font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;
+          padding:5px 12px;border-radius:5px;cursor:pointer;
+          text-transform:uppercase;transition:all 0.2s;flex-shrink:0;"
+          onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--gold)'"
+          onmouseout="if(!window._reorderActive){this.style.borderColor='var(--border)';this.style.color='var(--dim)'}">
+          ⠿ Reorder
+        </button>
+        <button class="share-btn" onclick="event.stopPropagation(); openShareModal()" title="Share app cards">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+          Share
+        </button>
+      </div>` : ''}
     `;
 
     // Cards wrap
@@ -2185,7 +2298,7 @@ function renderGrid() {
     wrapEl.appendChild(gridEl);
 
     headerEl.onclick = (e) => {
-      if (e.target.closest('#reorder-btn')) return;
+      if (e.target.closest('#reorder-btn') || e.target.closest('.share-btn')) return;
       const chevron = headerEl.querySelector('.section-chevron');
       const nowCollapsed = !wrapEl.classList.contains('collapsed');
       wrapEl.classList.toggle('collapsed', nowCollapsed);
@@ -4329,6 +4442,235 @@ function openModalTab(tabId) {
   if (tabId === 'tab-io')    vaultRenderGrid();
   updateGroqStatus();
 }
+
+
+// ── SHARE MODAL ──
+let _shareSelectedIds = new Set();
+
+function openShareModal() {
+  _shareSelectedIds = new Set();
+  _renderShareGrid();
+  document.getElementById('share-export-btn').disabled = true;
+  document.getElementById('share-message-input').value = '';
+  document.getElementById('share-modal').classList.add('open');
+}
+
+function closeShareModal() {
+  document.getElementById('share-modal').classList.remove('open');
+}
+
+function _renderShareGrid() {
+  const grid = document.getElementById('share-app-grid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  apps.forEach(app => {
+    const iconSrc = app.userIcon || app.meta?.favicon || '';
+    const initial = (app.name || '?').charAt(0).toUpperCase();
+    const tag = app.tag || app.meta?.tag || 'Application';
+    const isSelected = _shareSelectedIds.has(app.id);
+
+    const tile = document.createElement('div');
+    tile.className = 'share-app-tile' + (isSelected ? ' selected' : '');
+    tile.dataset.id = app.id;
+    tile.innerHTML = `
+      <div class="share-app-tile-icon">
+        ${iconSrc ? `<img src="${iconSrc}" alt="${escHtml(app.name)}" onerror="this.style.display='none'">` : escHtml(initial)}
+      </div>
+      <div class="share-app-tile-info">
+        <div class="share-app-tile-name">${escHtml(app.name)}</div>
+        <div class="share-app-tile-tag">${escHtml(tag)}</div>
+      </div>
+      <span class="share-app-tile-check">✓</span>
+    `;
+    tile.onclick = () => {
+      if (_shareSelectedIds.has(app.id)) {
+        _shareSelectedIds.delete(app.id);
+        tile.classList.remove('selected');
+      } else {
+        _shareSelectedIds.add(app.id);
+        tile.classList.add('selected');
+      }
+      _updateShareCount();
+    };
+    grid.appendChild(tile);
+  });
+  _updateShareCount();
+}
+
+function _updateShareCount() {
+  const n = _shareSelectedIds.size;
+  document.getElementById('share-selected-count').textContent = n;
+  const btn = document.getElementById('share-export-btn');
+  if (btn) btn.disabled = (n === 0);
+}
+
+function shareSelectAll() {
+  apps.forEach(a => _shareSelectedIds.add(a.id));
+  document.querySelectorAll('.share-app-tile').forEach(t => t.classList.add('selected'));
+  _updateShareCount();
+}
+
+function shareSelectNone() {
+  _shareSelectedIds.clear();
+  document.querySelectorAll('.share-app-tile').forEach(t => t.classList.remove('selected'));
+  _updateShareCount();
+}
+
+function shareSelectLive() {
+  _shareSelectedIds.clear();
+  apps.forEach(app => {
+    const pip = document.getElementById('cardpip-' + app.id);
+    if (pip && pip.classList.contains('pip-live')) _shareSelectedIds.add(app.id);
+  });
+  document.querySelectorAll('.share-app-tile').forEach(t => {
+    t.classList.toggle('selected', _shareSelectedIds.has(t.dataset.id));
+  });
+  _updateShareCount();
+}
+
+function generateShareCard() {
+  const selectedApps = apps.filter(a => _shareSelectedIds.has(a.id));
+  if (!selectedApps.length) { toast('Select at least one app'); return; }
+
+  const message = (document.getElementById('share-message-input')?.value || '').trim();
+  const now = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
+  // Build app card HTML for the share page
+  const cardHtml = selectedApps.map(app => {
+    const iconSrc = app.userIcon || app.meta?.favicon || '';
+    const initial = (app.name || '?').charAt(0).toUpperCase();
+    const tag = app.tag || app.meta?.tag || 'Application';
+    const desc = app.desc || app.meta?.desc || '';
+    const url = app.url || '#';
+    const shortUrl = url.replace(/^https?:\/\//, '').replace(/\/$/, '');
+    const themeColor = app.meta?.themeColor || '#00d4ff';
+    const glowColor = themeColor + '22';
+    const iconHtml = iconSrc
+      ? `<img src="${iconSrc}" alt="${escHtml(app.name)}" style="width:100%;height:100%;object-fit:cover;border-radius:11px;" onerror="this.style.display='none'">`
+      : `<span style="font-family:'Playfair Display',serif;font-size:2rem;font-weight:900;font-style:italic;color:${themeColor};opacity:0.7;">${escHtml(initial)}</span>`;
+
+    return `
+    <a href="${escHtml(url)}" target="_blank" rel="noopener" class="app-card" style="--card-glow:${glowColor};--card-accent:${themeColor};">
+      <div class="card-icon">${iconHtml}</div>
+      <div class="card-body">
+        <div class="card-tag">${escHtml(tag)}</div>
+        <div class="card-name">${escHtml(app.name)}</div>
+        ${desc ? `<div class="card-desc">${escHtml(desc)}</div>` : ''}
+        <div class="card-url">${escHtml(shortUrl)}</div>
+      </div>
+      <div class="card-arrow">→</div>
+    </a>`;
+  }).join('\n');
+
+  const messageHtml = message
+    ? `<div class="share-message-block"><div class="share-message-quote">"${escHtml(message)}"</div></div>`
+    : '';
+
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEXUS — Shared Apps</title>
+<meta name="description" content="A curated selection of apps shared via NEXUS.">
+<meta name="theme-color" content="#070b10">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=DM+Mono:wght@300;400;500&family=Instrument+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --black: #070b10;
+  --surface: #0d1117;
+  --surface2: #111820;
+  --border: rgba(0,212,255,0.12);
+  --gold: #00d4ff;
+  --white: #e8f4f8;
+  --dim: #4a6070;
+  --dim2: #1a2530;
+}
+html, body { min-height: 100vh; background: var(--black); color: var(--white); font-family: 'Instrument Sans', sans-serif; }
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background: radial-gradient(ellipse 80% 60% at 50% -10%, rgba(0,212,255,0.08) 0%, transparent 70%);
+  pointer-events: none; z-index: 0;
+}
+.page { max-width: 860px; margin: 0 auto; padding: 60px 24px 80px; position: relative; z-index: 1; }
+/* Header */
+.header { text-align: center; margin-bottom: 52px; }
+.header-eyebrow { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 4px; color: var(--gold); text-transform: uppercase; margin-bottom: 16px; opacity: 0.8; }
+.header-title { font-family: 'Playfair Display', serif; font-size: clamp(2rem, 5vw, 3.2rem); font-weight: 900; line-height: 1.1; color: var(--white); margin-bottom: 14px; }
+.header-title em { font-style: italic; color: var(--gold); text-shadow: 0 0 40px rgba(0,212,255,0.4); }
+.header-sub { font-size: 13px; color: var(--dim); letter-spacing: 0.3px; }
+.header-date { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 2px; color: var(--dim); text-transform: uppercase; margin-top: 10px; opacity: 0.6; }
+/* Message */
+.share-message-block { margin-bottom: 40px; padding: 20px 28px; background: linear-gradient(135deg, rgba(0,212,255,0.06), rgba(139,92,246,0.04)); border: 1px solid rgba(0,212,255,0.18); border-radius: 10px; text-align: center; }
+.share-message-quote { font-family: 'Playfair Display', serif; font-size: 1.1rem; font-style: italic; color: var(--white); line-height: 1.6; }
+/* Cards */
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 18px; }
+.app-card {
+  display: flex; align-items: flex-start; gap: 16px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 20px; text-decoration: none; color: inherit;
+  transition: all 0.28s cubic-bezier(0.23,1,0.32,1);
+  position: relative; overflow: hidden;
+  background: linear-gradient(135deg, var(--surface) 0%, rgba(13,17,23,0.97) 100%);
+}
+.app-card::before { content:''; position:absolute; inset:0; background: var(--card-glow); opacity:0; transition: opacity 0.3s; border-radius: 12px; }
+.app-card:hover { transform: translateY(-5px); border-color: var(--card-accent, var(--gold)); box-shadow: 0 8px 32px rgba(0,0,0,0.4), 0 0 24px var(--card-glow, rgba(0,212,255,0.1)); }
+.app-card:hover::before { opacity: 1; }
+.card-icon { width: 56px; height: 56px; border-radius: 12px; background: var(--surface2); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden; }
+.card-body { flex-grow: 1; min-width: 0; }
+.card-tag { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 3px; color: var(--card-accent, var(--gold)); text-transform: uppercase; margin-bottom: 5px; opacity: 0.85; }
+.card-name { font-family: 'Playfair Display', serif; font-size: 1.15rem; font-weight: 700; color: var(--white); margin-bottom: 6px; line-height: 1.25; }
+.card-desc { font-size: 11px; color: var(--dim); line-height: 1.6; margin-bottom: 10px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.card-url { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--dim); letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.card-arrow { align-self: center; font-size: 18px; color: var(--card-accent, var(--gold)); opacity: 0; transition: all 0.2s; flex-shrink: 0; transform: translateX(-4px); }
+.app-card:hover .card-arrow { opacity: 1; transform: translateX(0); }
+/* Footer */
+.footer { margin-top: 56px; text-align: center; border-top: 1px solid var(--border); padding-top: 28px; }
+.footer-nexus { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 4px; color: var(--dim); text-transform: uppercase; }
+.footer-nexus em { font-style: normal; color: var(--gold); }
+/* Responsive */
+@media (max-width: 600px) {
+  .page { padding: 40px 16px 60px; }
+  .cards { grid-template-columns: 1fr; gap: 12px; }
+  .header-title { font-size: 2rem; }
+}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="header">
+    <div class="header-eyebrow">✦ App Portfolio — Shared Selection</div>
+    <h1 class="header-title"><em>NEXUS</em> Apps</h1>
+    <div class="header-sub">${selectedApps.length} application${selectedApps.length !== 1 ? 's' : ''} — click any card to open</div>
+    <div class="header-date">Shared on ${now}</div>
+  </div>
+  ${messageHtml}
+  <div class="cards">
+    ${cardHtml}
+  </div>
+  <div class="footer">
+    <div class="footer-nexus">Built with <em>NEXUS</em> — App Portfolio Suite</div>
+  </div>
+</div>
+</body>
+</html>`;
+
+  // Download the HTML file
+  const blob = new Blob([html], { type: 'text/html' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `nexus_share_${new Date().toISOString().slice(0,10)}.html`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+
+  closeShareModal();
+  toast(`↗ Share card exported — ${selectedApps.length} app${selectedApps.length !== 1 ? 's' : ''}`, 3000);
+}
+
+// ── END SHARE MODAL ──
 
 // ── INIT ──
 loadStoredLogo();
